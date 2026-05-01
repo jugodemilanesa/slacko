@@ -9,7 +9,8 @@ export type ChatState =
 	| 'VALIDATE_MODEL'
 	| 'CONVERT_FORMS'
 	| 'SOLVE_AND_GRAPH'
-	| 'INTERPRET';
+	| 'INTERPRET'
+	| 'THEORY_QUERY';
 
 export interface Variable {
 	name: string;
@@ -82,7 +83,8 @@ const STEP_LABELS: Record<ChatState, string> = {
 	VALIDATE_MODEL: 'Validación',
 	CONVERT_FORMS: 'Forma estándar',
 	SOLVE_AND_GRAPH: 'Resolución',
-	INTERPRET: 'Interpretación'
+	INTERPRET: 'Interpretación',
+	THEORY_QUERY: 'Consulta teórica'
 };
 
 export { STEP_ORDER, STEP_LABELS };
@@ -105,6 +107,10 @@ export const model = writable<LPModel>({
 export const solverResult = writable<SolverResult | null>(null);
 export const standardFormResult = writable<StandardFormResult | null>(null);
 
+export const isGuidedFlow = derived(currentState, ($state) =>
+	STEP_ORDER.includes($state)
+);
+
 export const currentStepIndex = derived(currentState, ($state) =>
 	STEP_ORDER.indexOf($state)
 );
@@ -116,7 +122,7 @@ export function addMessage(role: 'assistant' | 'user', content: string, step?: C
 export function advanceState() {
 	currentState.update((state) => {
 		const idx = STEP_ORDER.indexOf(state);
-		if (idx < STEP_ORDER.length - 1) {
+		if (idx >= 0 && idx < STEP_ORDER.length - 1) {
 			return STEP_ORDER[idx + 1];
 		}
 		return state;
