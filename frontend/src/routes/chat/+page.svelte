@@ -6,6 +6,8 @@
 		currentState,
 		messages,
 		addMessage,
+		sendAssistantMessage,
+		assistantThinking,
 		resetChat,
 		STEP_LABELS,
 		currentStepIndex,
@@ -15,6 +17,7 @@
 	import { clearTheory } from '$lib/stores/theory';
 
 	import ChatMessage from '$lib/components/ChatMessage.svelte';
+	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import ModelSidebar from '$lib/components/ModelSidebar.svelte';
 	import SelectMode from '$lib/components/steps/SelectMode.svelte';
@@ -38,11 +41,11 @@
 			goto('/login');
 			return;
 		}
-		// Initial greeting
+		// Initial greeting con un pequeño delay para que aparezca con vida
 		if ($messages.length === 0) {
-			addMessage(
-				'assistant',
-				'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?'
+			sendAssistantMessage(
+				'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+				{ delay: 600, expression: 'happy' }
 			);
 		}
 	});
@@ -66,9 +69,9 @@
 	function handleNewChat() {
 		clearTheory();
 		resetChat();
-		addMessage(
-			'assistant',
-			'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?'
+		sendAssistantMessage(
+			'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+			{ delay: 600, expression: 'happy' }
 		);
 	}
 </script>
@@ -147,12 +150,18 @@
 		{:else}
 			<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
 				<div class="max-w-3xl mx-auto px-6 py-6 space-y-4">
-					<!-- Rendered messages -->
+					<!-- Rendered messages (con expresión por mensaje) -->
 					{#each $messages as msg (msg.id)}
-						<ChatMessage role={msg.role} content={msg.content} />
+						<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} />
 					{/each}
 
-					<!-- Current step form -->
+					<!-- Indicador de tipeo mientras Slacko 'piensa' -->
+					{#if $assistantThinking}
+						<TypingIndicator />
+					{/if}
+
+					<!-- Paso activo (queda al final; los pasos anteriores quedan trazados
+						 en los divisores y mensajes del scroll) -->
 					<div class="flex justify-start">
 						<div class="max-w-[85%] w-full">
 							{#key $currentState}

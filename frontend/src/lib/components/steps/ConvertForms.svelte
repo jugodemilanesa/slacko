@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { model, addMessage, advanceState, standardFormResult } from '$lib/stores/chat';
+	import {
+		model,
+		addMessage,
+		advanceState,
+		standardFormResult,
+		sendAssistantMessage
+	} from '$lib/stores/chat';
 	import { getStandardForm } from '$lib/api/solver';
 	import { get } from 'svelte/store';
 
@@ -29,10 +35,13 @@
 		}
 	});
 
-	function next() {
+	async function next() {
 		addMessage('user', 'Entendido, resolver');
-		addMessage('assistant', 'Calculando la **región factible**, los **vértices** y el **punto óptimo**...');
 		advanceState();
+		await sendAssistantMessage(
+			'Calculando la **región factible**, los **vértices** y el **punto óptimo**...',
+			{ delay: 800, expression: 'thinking' }
+		);
 	}
 </script>
 

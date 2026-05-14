@@ -1,19 +1,28 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, goToState } from '$lib/stores/chat';
+	import {
+		model,
+		addMessage,
+		advanceState,
+		goToState,
+		sendAssistantMessage
+	} from '$lib/stores/chat';
 
-	function confirm() {
+	async function confirm() {
 		addMessage('user', 'Confirmo, resolver');
-		addMessage(
-			'assistant',
-			'Convirtiendo a **forma estándar**...'
-		);
 		advanceState();
+		await sendAssistantMessage('Convirtiendo a **forma estándar**...', {
+			delay: 700,
+			expression: 'thinking'
+		});
 	}
 
-	function edit() {
-		goToState('BUILD_CONSTRAINTS');
+	async function edit() {
 		addMessage('user', 'Quiero editar las restricciones');
-		addMessage('assistant', 'Dale, modificá las restricciones.');
+		goToState('BUILD_CONSTRAINTS');
+		await sendAssistantMessage('Dale, modificá las restricciones.', {
+			delay: 500,
+			expression: 'idle'
+		});
 	}
 </script>
 

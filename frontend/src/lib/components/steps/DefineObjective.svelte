@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { model, addMessage, advanceState } from '$lib/stores/chat';
+	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
 
-	function select(sense: 'maximize' | 'minimize') {
+	async function select(sense: 'maximize' | 'minimize') {
 		model.update((m) => ({ ...m, sense }));
 		addMessage('user', sense === 'maximize' ? 'Maximizar' : 'Minimizar');
-		addMessage(
-			'assistant',
-			`Bien, vamos a **${sense === 'maximize' ? 'maximizar' : 'minimizar'}**. Ahora definí las **variables de decisión** y los **coeficientes** de la función objetivo.`
-		);
 		advanceState();
+		await sendAssistantMessage(
+			`Bien, vamos a **${sense === 'maximize' ? 'maximizar' : 'minimizar'}**. Ahora definí las **variables de decisión** y los **coeficientes** de la función objetivo.`,
+			{ delay: 650, expression: 'explain' }
+		);
 	}
 </script>
 

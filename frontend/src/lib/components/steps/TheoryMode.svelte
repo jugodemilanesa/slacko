@@ -27,6 +27,9 @@
 	import EmptyResult from '$lib/components/theory/EmptyResult.svelte';
 	import CategoryBrowser from '$lib/components/theory/CategoryBrowser.svelte';
 	import TheoryHistory from '$lib/components/theory/TheoryHistory.svelte';
+	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
+
+	import type { Expression } from '$lib/stores/chat';
 
 	let question = $state('');
 	let categories = $state<TheoryCategory[]>([]);
@@ -52,11 +55,14 @@
 		isLoading.set(true);
 		queryError.set(null);
 		try {
-			const res = await queryTheory(q);
+			const [res] = await Promise.all([
+				queryTheory(q),
+				// pequeño delay mínimo para que el avatar 'thinking' se note
+				new Promise((r) => setTimeout(r, 450))
+			]);
 			lastQuery.set(q);
 			lastResponse.set(res);
 			pushHistory(q, res);
-			// Clear any previously navigated concept so the result card shows.
 			selectedConcept.set(null);
 			selectedConceptRelated.set([]);
 		} catch (e) {
@@ -70,7 +76,10 @@
 		isLoading.set(true);
 		queryError.set(null);
 		try {
-			const res = await getConcept(id);
+			const [res] = await Promise.all([
+				getConcept(id),
+				new Promise((r) => setTimeout(r, 350))
+			]);
 			selectedConcept.set(res.concept);
 			selectedConceptRelated.set(res.related);
 		} catch (e) {
@@ -109,10 +118,35 @@
 	});
 
 	const showingDetail = $derived($selectedConcept !== null);
+
+	const slakingExpression: Expression = $derived.by(() => {
+		if ($isLoading) return 'thinking';
+		if ($queryError) return 'sad';
+		if (showingDetail || matchedResp) return 'explain';
+		if (unmatchedResp) return 'sad';
+		return 'happy';
+	});
+
+	const slakingMessage = $derived.by(() => {
+		if ($isLoading) return 'Estoy buscando en la bibliografía…';
+		if ($queryError) return 'Algo salió mal con la búsqueda.';
+		if (showingDetail) return 'Acá tenés el concepto en detalle.';
+		if (matchedResp) return '¡Lo encontré! Te dejo el concepto y sus relacionados.';
+		if (unmatchedResp) return 'No encontré exactamente eso. Probá con otra forma o explorá las sugerencias.';
+		return '¿Sobre qué tema querés repasar?';
+	});
 </script>
 
 <div class="theory-mode">
 	<div class="content">
+		<!-- Slacko acompañante: la expresión cambia con el estado -->
+		<div class="slacko-strip" role="status" aria-live="polite">
+			<SlakingAvatar expression={slakingExpression} size="lg" ring floating />
+			<div class="slacko-bubble">
+				{slakingMessage}
+			</div>
+		</div>
+
 		<TheorySearch
 			bind:value={question}
 			loading={$isLoading}
@@ -205,6 +239,25 @@
 
 	.content {
 		min-width: 0;
+	}
+
+	.slacko-strip {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		margin-bottom: 1.25rem;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface-card);
+		border: 1px solid var(--color-bot-border);
+		border-radius: 14px;
+	}
+
+	.slacko-bubble {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		color: var(--color-ink);
+		font-style: italic;
+		line-height: 1.4;
 	}
 
 	.history-bar {

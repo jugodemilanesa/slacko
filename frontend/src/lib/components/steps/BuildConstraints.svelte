@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, type Constraint } from '$lib/stores/chat';
+	import {
+		model,
+		addMessage,
+		advanceState,
+		sendAssistantMessage,
+		type Constraint
+	} from '$lib/stores/chat';
 	import { get } from 'svelte/store';
 
 	let label = $state('');
@@ -36,7 +42,7 @@
 		model.update((m) => ({ ...m, constraints: [...localConstraints] }));
 	}
 
-	function finish() {
+	async function finish() {
 		if (localConstraints.length === 0) return;
 
 		const m = get(model);
@@ -48,11 +54,11 @@
 			.join('\n');
 
 		addMessage('user', lines);
-		addMessage(
-			'assistant',
-			'Revisá el modelo completo antes de resolver. Si está todo bien, confirmá para continuar.'
-		);
 		advanceState();
+		await sendAssistantMessage(
+			'Revisá el modelo completo antes de resolver. Si está todo bien, confirmá para continuar.',
+			{ delay: 800, expression: 'explain' }
+		);
 	}
 
 	let canAdd = $derived(

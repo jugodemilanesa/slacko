@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="bg-think" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff4e0"/>
+      <stop offset="100%" stop-color="#e8d4ad"/>
+    </radialGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg-think)" stroke="#7a4a1f" stroke-width="2"/>
+  <ellipse cx="60" cy="68" rx="38" ry="34" fill="#f4d9a8"/>
+  <path d="M22 60 Q60 18 98 60 Q90 38 60 30 Q30 38 22 60 Z" fill="#8a5a2b"/>
+  <ellipse cx="28" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <ellipse cx="92" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <!-- ojo izquierdo entrecerrado -->
+  <path d="M42 62 Q50 58 58 62" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- ojo derecho abierto mirando arriba -->
+  <ellipse cx="70" cy="62" rx="3.5" ry="4" fill="#3a2410"/>
+  <ellipse cx="71" cy="60.5" rx="1" ry="1.2" fill="#fff"/>
+  <!-- ceja levantada -->
+  <path d="M64 54 Q70 51 77 55" stroke="#3a2410" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="60" cy="76" rx="3" ry="2" fill="#3a2410"/>
+  <!-- boca pensativa, lado torcido -->
+  <path d="M52 86 Q58 84 64 86 Q66 84 68 86" stroke="#3a2410" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- signo de interrogación flotando -->
+  <g transform="translate(96 18)" opacity="0.85">
+    <circle cx="0" cy="0" r="10" fill="#fff" stroke="#3b4cc0" stroke-width="1.5"/>
+    <text x="0" y="4" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="bold" fill="#3b4cc0">?</text>
+  </g>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff4e0"/>
+      <stop offset="100%" stop-color="#e8d4ad"/>
+    </radialGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg)" stroke="#7a4a1f" stroke-width="2"/>
+  <!-- cara -->
+  <ellipse cx="60" cy="68" rx="38" ry="34" fill="#f4d9a8"/>
+  <!-- mejillas / pelaje marrón superior -->
+  <path d="M22 60 Q60 18 98 60 Q90 38 60 30 Q30 38 22 60 Z" fill="#8a5a2b"/>
+  <!-- orejas -->
+  <ellipse cx="28" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <ellipse cx="92" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <!-- ojos cerrados (vago) -->
+  <path d="M44 64 Q50 60 56 64" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M64 64 Q70 60 76 64" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- nariz -->
+  <ellipse cx="60" cy="74" rx="3" ry="2" fill="#3a2410"/>
+  <!-- boca relajada -->
+  <path d="M52 84 Q60 90 68 84" stroke="#3a2410" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

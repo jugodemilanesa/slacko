@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { addMessage, advanceState, goToState } from '$lib/stores/chat';
+	import { addMessage, advanceState, goToState, sendAssistantMessage } from '$lib/stores/chat';
 
-	function selectGuided() {
+	async function selectGuided() {
 		addMessage('user', 'Quiero resolver paso a paso');
-		addMessage(
-			'assistant',
-			'Perfecto, vamos a ir armando el modelo juntos. Para empezar, **pegá el enunciado del problema** que querés resolver.'
-		);
 		advanceState();
+		await sendAssistantMessage(
+			'Perfecto, vamos a ir armando el modelo juntos. Para empezar, **pegá el enunciado del problema** que querés resolver.',
+			{ delay: 700, expression: 'explain' }
+		);
 	}
 
 	function selectTheory() {

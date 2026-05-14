@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { model, addMessage, advanceState, solverResult } from '$lib/stores/chat';
+	import {
+		model,
+		addMessage,
+		advanceState,
+		solverResult,
+		sendAssistantMessage
+	} from '$lib/stores/chat';
 	import { solveProblem } from '$lib/api/solver';
 	import { get } from 'svelte/store';
 
@@ -176,20 +182,23 @@
 		return Number.isInteger(n) ? n.toString() : n.toFixed(2);
 	}
 
-	function next() {
+	async function next() {
 		addMessage('user', 'Ver interpretación');
 		const r = get(solverResult);
 		const m = get(model);
+		advanceState();
 		if (r?.optimal_point) {
 			const sense = m.sense === 'maximize' ? 'máxima' : 'mínima';
-			addMessage(
-				'assistant',
-				`El punto óptimo se encuentra en **${m.variables[0].name} = ${round(r.optimal_point[0])}** (${m.variables[0].label}), **${m.variables[1].name} = ${round(r.optimal_point[1])}** (${m.variables[1].label}), generando un **Z = ${round(r.optimal_value!)}** ${sense}.`
+			await sendAssistantMessage(
+				`El punto óptimo se encuentra en **${m.variables[0].name} = ${round(r.optimal_point[0])}** (${m.variables[0].label}), **${m.variables[1].name} = ${round(r.optimal_point[1])}** (${m.variables[1].label}), generando un **Z = ${round(r.optimal_value!)}** ${sense}.`,
+				{ delay: 900, expression: 'happy' }
 			);
 		} else {
-			addMessage('assistant', 'No se encontró una solución factible para este problema.');
+			await sendAssistantMessage(
+				'No se encontró una solución factible para este problema.',
+				{ delay: 700, expression: 'sad' }
+			);
 		}
-		advanceState();
 	}
 </script>
 

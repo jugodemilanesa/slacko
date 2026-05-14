@@ -55,11 +55,14 @@ export interface StandardFormResult {
 	artificial_variables: string[];
 }
 
+export type Expression = 'idle' | 'thinking' | 'happy' | 'sad' | 'explain';
+
 export interface ChatMessage {
 	id: string;
-	role: 'assistant' | 'user';
+	role: 'assistant' | 'user' | 'divider';
 	content: string;
 	step?: ChatState;
+	expression?: Expression;
 }
 
 const STEP_ORDER: ChatState[] = [
@@ -115,15 +118,55 @@ export const currentStepIndex = derived(currentState, ($state) =>
 	STEP_ORDER.indexOf($state)
 );
 
-export function addMessage(role: 'assistant' | 'user', content: string, step?: ChatState) {
-	messages.update((msgs) => [...msgs, { id: generateId(), role, content, step }]);
+export const assistantThinking = writable<boolean>(false);
+
+export function addMessage(
+	role: 'assistant' | 'user' | 'divider',
+	content: string,
+	step?: ChatState,
+	expression?: Expression
+) {
+	messages.update((msgs) => [
+		...msgs,
+		{ id: generateId(), role, content, step, expression }
+	]);
+}
+
+export interface SendOptions {
+	delay?: number; // ms before message appears
+	thinkingDelay?: number; // ms to show 'thinking' before delay (defaults to delay)
+	expression?: Expression;
+	step?: ChatState;
+}
+
+/**
+ * Envía un mensaje del asistente con un pequeño retardo y muestra el avatar en
+ * modo 'thinking' mientras tanto. Devuelve una promesa que resuelve cuando el
+ * mensaje fue añadido.
+ */
+export async function sendAssistantMessage(
+	content: string,
+	opts: SendOptions = {}
+): Promise<void> {
+	const delay = opts.delay ?? 650;
+	assistantThinking.set(true);
+	await new Promise((r) => setTimeout(r, delay));
+	assistantThinking.set(false);
+	addMessage('assistant', content, opts.step, opts.expression ?? 'idle');
+}
+
+export function addStepDivider(label: string, step: ChatState) {
+	addMessage('divider', label, step);
 }
 
 export function advanceState() {
 	currentState.update((state) => {
 		const idx = STEP_ORDER.indexOf(state);
 		if (idx >= 0 && idx < STEP_ORDER.length - 1) {
-			return STEP_ORDER[idx + 1];
+			const next = STEP_ORDER[idx + 1];
+			// inject divider for traceability
+			addMessage('divider', STEP_LABELS[next], next);
+			return next;
 		}
 		return state;
 	});

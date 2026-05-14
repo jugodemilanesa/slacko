@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="bg-expl" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff4e0"/>
+      <stop offset="100%" stop-color="#e8d4ad"/>
+    </radialGradient>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="url(#bg-expl)" stroke="#7a4a1f" stroke-width="2"/>
+  <ellipse cx="60" cy="68" rx="38" ry="34" fill="#f4d9a8"/>
+  <path d="M22 60 Q60 18 98 60 Q90 38 60 30 Q30 38 22 60 Z" fill="#8a5a2b"/>
+  <ellipse cx="28" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <ellipse cx="92" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
+  <!-- ojos abiertos atentos -->
+  <ellipse cx="48" cy="64" rx="3.5" ry="4" fill="#3a2410"/>
+  <ellipse cx="49" cy="62.5" rx="1" ry="1.2" fill="#fff"/>
+  <ellipse cx="72" cy="64" rx="3.5" ry="4" fill="#3a2410"/>
+  <ellipse cx="73" cy="62.5" rx="1" ry="1.2" fill="#fff"/>
+  <!-- cejas decididas -->
+  <path d="M40 54 L56 56" stroke="#3a2410" stroke-width="2" stroke-linecap="round"/>
+  <path d="M64 56 L80 54" stroke="#3a2410" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="60" cy="76" rx="3" ry="2" fill="#3a2410"/>
+  <!-- boca hablando (forma de O) -->
+  <ellipse cx="60" cy="88" rx="6" ry="4" fill="#3a2410"/>
+  <!-- burbuja de diálogo -->
+  <g transform="translate(96 22)" opacity="0.9">
+    <circle cx="0" cy="0" r="11" fill="#fff" stroke="#3b4cc0" stroke-width="1.5"/>
+    <circle cx="-4" cy="0" r="1.5" fill="#3b4cc0"/>
+    <circle cx="0" cy="0" r="1.5" fill="#3b4cc0"/>
+    <circle cx="4" cy="0" r="1.5" fill="#3b4cc0"/>
+  </g>
+</svg>

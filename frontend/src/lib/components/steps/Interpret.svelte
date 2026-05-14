@@ -1,6 +1,14 @@
 <script lang="ts">
-	import { model, solverResult, resetChat } from '$lib/stores/chat';
+	import { model, solverResult, resetChat, sendAssistantMessage } from '$lib/stores/chat';
 	import { get } from 'svelte/store';
+
+	async function restart() {
+		resetChat();
+		await sendAssistantMessage(
+			'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+			{ delay: 600, expression: 'happy' }
+		);
+	}
 
 	const m = get(model);
 	const r = get(solverResult);
@@ -70,7 +78,7 @@
 	</div>
 
 	<button
-		onclick={resetChat}
+		onclick={restart}
 		class="w-full mt-3 py-2.5 border border-bot-border text-ink rounded-lg text-sm font-medium
 			hover:bg-surface-warm transition-colors cursor-pointer"
 	>

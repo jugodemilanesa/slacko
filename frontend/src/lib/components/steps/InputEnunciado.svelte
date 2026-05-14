@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { model, addMessage, advanceState } from '$lib/stores/chat';
+	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
 
 	let text = $state('');
 
-	function submit() {
+	async function submit() {
 		const trimmed = text.trim();
 		if (!trimmed) return;
 
 		model.update((m) => ({ ...m, enunciado: trimmed }));
 		addMessage('user', trimmed);
-		addMessage(
-			'assistant',
-			'Entendido, tengo el enunciado. Ahora decime: **¿el problema busca Maximizar o Minimizar?**'
-		);
 		advanceState();
+		await sendAssistantMessage(
+			'Entendido, tengo el enunciado. Ahora decime: **¿el problema busca Maximizar o Minimizar?**',
+			{ delay: 800, expression: 'thinking' }
+		);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

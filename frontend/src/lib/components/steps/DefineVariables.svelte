@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { model, addMessage, advanceState } from '$lib/stores/chat';
+	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
 	import { get } from 'svelte/store';
 
 	let var1Label = $state('');
@@ -7,7 +7,7 @@
 	let var2Label = $state('');
 	let var2Coeff = $state<number | string>('');
 
-	function submit() {
+	async function submit() {
 		if (!var1Label.trim() || !var2Label.trim() || var1Coeff === '' || var2Coeff === '') return;
 
 		const c1 = Number(var1Coeff);
@@ -28,11 +28,11 @@
 			'user',
 			`x1 = ${var1Label} (coef: ${c1})\nx2 = ${var2Label} (coef: ${c2})`
 		);
-		addMessage(
-			'assistant',
-			`La función objetivo queda: **${sense} Z = ${c1}x1 + ${c2}x2**\n\nAhora vamos con las **restricciones**. Ingresá cada una con su etiqueta, coeficientes, signo y valor límite.`
-		);
 		advanceState();
+		await sendAssistantMessage(
+			`La función objetivo queda: **${sense} Z = ${c1}x1 + ${c2}x2**\n\nAhora vamos con las **restricciones**. Ingresá cada una con su etiqueta, coeficientes, signo y valor límite.`,
+			{ delay: 750, expression: 'happy' }
+		);
 	}
 </script>
 
