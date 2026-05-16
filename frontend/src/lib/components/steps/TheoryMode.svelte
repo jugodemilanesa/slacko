@@ -1,23 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import {
 		queryTheory,
 		getConcept,
 		listCategories,
-		type TheoryCategory,
-		type ConceptDetail,
-		type ConceptSummary,
-		type QueryResponse
+		type TheoryCategory
 	} from '$lib/api/theory';
 	import {
 		lastQuery,
-		lastResponse,
-		selectedConcept,
-		selectedConceptRelated,
 		isLoading,
 		queryError,
 		queryHistory,
+		turns,
 		pushHistory,
+		pushQueryTurn,
+		pushConceptTurn,
 		clearTheory
 	} from '$lib/stores/theory';
 	import { resetChat } from '$lib/stores/chat';
@@ -26,17 +23,13 @@
 	import ConceptCard from '$lib/components/theory/ConceptCard.svelte';
 	import EmptyResult from '$lib/components/theory/EmptyResult.svelte';
 	import CategoryBrowser from '$lib/components/theory/CategoryBrowser.svelte';
-	import TheoryHistory from '$lib/components/theory/TheoryHistory.svelte';
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 
 	import type { Expression } from '$lib/stores/chat';
 
 	let question = $state('');
 	let categories = $state<TheoryCategory[]>([]);
-
-	$effect(() => {
-		question = $lastQuery;
-	});
+	let stackEl = $state<HTMLDivElement | null>(null);
 
 	onMount(async () => {
 		try {
@@ -51,20 +44,29 @@
 		return categories.find((c) => c.id === catId)?.title ?? catId.replace(/-/g, ' ');
 	}
 
+	async function scrollToBottom() {
+		await tick();
+		if (stackEl) {
+			stackEl.scrollTo({ top: stackEl.scrollHeight, behavior: 'smooth' });
+		}
+	}
+
 	async function runQuery(q: string) {
+		const trimmed = q.trim();
+		if (!trimmed) return;
 		isLoading.set(true);
 		queryError.set(null);
+		lastQuery.set(trimmed);
+		question = '';
+		await scrollToBottom();
 		try {
 			const [res] = await Promise.all([
-				queryTheory(q),
-				// pequeño delay mínimo para que el avatar 'thinking' se note
+				queryTheory(trimmed),
 				new Promise((r) => setTimeout(r, 450))
 			]);
-			lastQuery.set(q);
-			lastResponse.set(res);
-			pushHistory(q, res);
-			selectedConcept.set(null);
-			selectedConceptRelated.set([]);
+			pushQueryTurn(trimmed, res);
+			pushHistory(trimmed, res);
+			await scrollToBottom();
 		} catch (e) {
 			queryError.set(e instanceof Error ? e.message : 'Error al buscar');
 		} finally {
@@ -72,16 +74,17 @@
 		}
 	}
 
-	async function openConcept(id: string) {
+	async function openConcept(id: string, fromId: string | null = null) {
 		isLoading.set(true);
 		queryError.set(null);
+		await scrollToBottom();
 		try {
 			const [res] = await Promise.all([
 				getConcept(id),
-				new Promise((r) => setTimeout(r, 350))
+				new Promise((r) => setTimeout(r, 300))
 			]);
-			selectedConcept.set(res.concept);
-			selectedConceptRelated.set(res.related);
+			pushConceptTurn(res.concept, res.related, fromId);
+			await scrollToBottom();
 		} catch (e) {
 			queryError.set(e instanceof Error ? e.message : 'Error al cargar concepto');
 		} finally {
@@ -89,112 +92,55 @@
 		}
 	}
 
-	function backToResult() {
-		selectedConcept.set(null);
-		selectedConceptRelated.set([]);
-	}
-
 	function backToStart() {
 		clearTheory();
 		resetChat();
 	}
 
-	function selectFromHistory(question_: string, conceptId: string | null) {
-		if (conceptId) {
-			openConcept(conceptId);
-		} else {
-			runQuery(question_);
-		}
-	}
-
-	const matchedResp = $derived.by(() => {
-		const r = $lastResponse;
-		return r && r.matched ? r : null;
-	});
-
-	const unmatchedResp = $derived.by(() => {
-		const r = $lastResponse;
-		return r && !r.matched ? r : null;
-	});
-
-	const showingDetail = $derived($selectedConcept !== null);
+	const hasTurns = $derived($turns.length > 0);
 
 	const slakingExpression: Expression = $derived.by(() => {
 		if ($isLoading) return 'thinking';
 		if ($queryError) return 'sad';
-		if (showingDetail || matchedResp) return 'explain';
-		if (unmatchedResp) return 'sad';
-		return 'happy';
+		if (!hasTurns) return 'happy';
+		const last = $turns[$turns.length - 1];
+		if (last.kind === 'query' && !last.response.matched) return 'sad';
+		return 'explain';
 	});
 
 	const slakingMessage = $derived.by(() => {
 		if ($isLoading) return 'Estoy buscando en la bibliografía…';
 		if ($queryError) return 'Algo salió mal con la búsqueda.';
-		if (showingDetail) return 'Acá tenés el concepto en detalle.';
-		if (matchedResp) return '¡Lo encontré! Te dejo el concepto y sus relacionados.';
-		if (unmatchedResp) return 'No encontré exactamente eso. Probá con otra forma o explorá las sugerencias.';
-		return '¿Sobre qué tema querés repasar?';
+		if (!hasTurns) return '¿Sobre qué tema querés repasar?';
+		const last = $turns[$turns.length - 1];
+		if (last.kind === 'query' && !last.response.matched) {
+			return 'No encontré exactamente eso. Probá con otra forma o explorá las sugerencias.';
+		}
+		return 'Seguí preguntando o explorá los conceptos relacionados.';
 	});
+
+	function formatTime(ts: number): string {
+		const d = new Date(ts);
+		return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	}
 </script>
 
 <div class="theory-mode">
 	<div class="content">
-		<!-- Slacko acompañante: la expresión cambia con el estado -->
 		<div class="slacko-strip" role="status" aria-live="polite">
 			<SlakingAvatar expression={slakingExpression} size="lg" ring floating />
 			<div class="slacko-bubble">
 				{slakingMessage}
 			</div>
+			{#if hasTurns}
+				<button type="button" class="clear-btn" onclick={() => clearTheory()}>
+					Limpiar chat
+				</button>
+			{/if}
 		</div>
 
-		<TheorySearch
-			bind:value={question}
-			loading={$isLoading}
-			onSubmit={runQuery}
-		/>
-
-		<div class="history-bar">
-			<TheoryHistory
-				history={$queryHistory}
-				onSelect={(e) => selectFromHistory(e.question, e.matchedConceptId)}
-			/>
-		</div>
-
-		{#if $queryError}
-			<div class="error-banner">
-				<span class="error-label">Algo falló:</span> {$queryError}
-			</div>
-		{/if}
-
-		<div class="result-area">
-			{#if showingDetail && $selectedConcept}
-				{#key $selectedConcept.id}
-					<ConceptCard
-						concept={$selectedConcept}
-						related={$selectedConceptRelated}
-						categoryTitle={categoryTitle($selectedConcept.category)}
-						onSelectRelated={openConcept}
-						onBack={backToResult}
-						showBack={!!$lastResponse}
-					/>
-				{/key}
-			{:else if matchedResp}
-				{#key matchedResp.concept.id}
-					<ConceptCard
-						concept={matchedResp.concept}
-						related={matchedResp.related}
-						categoryTitle={categoryTitle(matchedResp.concept.category)}
-						onSelectRelated={openConcept}
-					/>
-				{/key}
-			{:else if unmatchedResp}
-				<EmptyResult
-					message={unmatchedResp.message}
-					suggestions={unmatchedResp.suggestions}
-					question={$lastQuery}
-					onSelect={openConcept}
-				/>
-			{:else}
+		<div class="chat-stack" bind:this={stackEl} aria-live="polite">
+			{#if !hasTurns}
 				<div class="prompt-empty">
 					<div class="ornament-row" aria-hidden="true">
 						<span class="dot"></span>
@@ -204,10 +150,99 @@
 						<span class="dot"></span>
 					</div>
 					<p class="prompt-msg">
-						Escribí una pregunta arriba o explorá el temario por categoría.
+						Escribí una pregunta abajo o explorá el temario por categoría.
 					</p>
 				</div>
+			{:else}
+				{#each $turns as turn (turn.id)}
+					{#if turn.kind === 'query'}
+						<div class="turn user-turn">
+							<div class="bubble user-bubble">
+								<div class="meta">
+									<span class="meta-label">Vos</span>
+									<span class="meta-time">{formatTime(turn.timestamp)}</span>
+								</div>
+								<p class="user-text">{turn.question}</p>
+							</div>
+						</div>
+						<div class="turn bot-turn">
+							<div class="bot-avatar">
+								<SlakingAvatar
+									expression={turn.response.matched ? 'explain' : 'sad'}
+									size="sm"
+								/>
+							</div>
+							<div class="bot-body">
+								{#if turn.response.matched}
+									<ConceptCard
+										concept={turn.response.concept}
+										related={turn.response.related}
+										categoryTitle={categoryTitle(turn.response.concept.category)}
+										onSelectRelated={(id) => openConcept(id, turn.response.matched ? turn.response.concept.id : null)}
+									/>
+								{:else}
+									<EmptyResult
+										message={turn.response.message}
+										suggestions={turn.response.suggestions}
+										question={turn.question}
+										onSelect={(id) => openConcept(id, null)}
+									/>
+								{/if}
+							</div>
+						</div>
+					{:else}
+						<div class="turn user-turn">
+							<div class="bubble user-bubble subtle">
+								<div class="meta">
+									<span class="meta-label">Vos</span>
+									<span class="meta-time">{formatTime(turn.timestamp)}</span>
+								</div>
+								<p class="user-text">Quiero ver: <strong>{turn.concept.title}</strong></p>
+							</div>
+						</div>
+						<div class="turn bot-turn">
+							<div class="bot-avatar">
+								<SlakingAvatar expression="explain" size="sm" />
+							</div>
+							<div class="bot-body">
+								<ConceptCard
+									concept={turn.concept}
+									related={turn.related}
+									categoryTitle={categoryTitle(turn.concept.category)}
+									onSelectRelated={(id) => openConcept(id, turn.concept.id)}
+								/>
+							</div>
+						</div>
+					{/if}
+				{/each}
+
+				{#if $isLoading}
+					<div class="turn bot-turn">
+						<div class="bot-avatar">
+							<SlakingAvatar expression="thinking" size="sm" />
+						</div>
+						<div class="bot-body">
+							<div class="typing">
+								<span></span><span></span><span></span>
+							</div>
+						</div>
+					</div>
+				{/if}
 			{/if}
+		</div>
+
+		{#if $queryError}
+			<div class="error-banner">
+				<span class="error-label">Algo falló:</span> {$queryError}
+			</div>
+		{/if}
+
+		<div class="composer">
+			<TheorySearch
+				bind:value={question}
+				loading={$isLoading}
+				onSubmit={runQuery}
+			/>
 		</div>
 
 		<footer class="end-cta">
@@ -221,7 +256,7 @@
 
 	<aside class="side">
 		<div class="side-inner">
-			<CategoryBrowser onSelect={openConcept} />
+			<CategoryBrowser onSelect={(id) => openConcept(id, null)} />
 		</div>
 	</aside>
 </div>
@@ -239,13 +274,15 @@
 
 	.content {
 		min-width: 0;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.slacko-strip {
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
-		margin-bottom: 1.25rem;
+		margin-bottom: 1rem;
 		padding: 0.75rem 1rem;
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
@@ -258,15 +295,137 @@
 		color: var(--color-ink);
 		font-style: italic;
 		line-height: 1.4;
+		flex: 1;
 	}
 
-	.history-bar {
-		margin-top: 1rem;
-		min-height: 1.5rem;
+	.clear-btn {
+		font-family: var(--font-body);
+		font-size: 0.7rem;
+		color: var(--color-ink-muted);
+		background: transparent;
+		border: 1px solid var(--color-bot-border);
+		padding: 0.35rem 0.7rem;
+		border-radius: 999px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		white-space: nowrap;
+	}
+
+	.clear-btn:hover {
+		color: var(--color-error);
+		border-color: var(--color-error);
+	}
+
+	.chat-stack {
+		max-height: calc(100vh - 22rem);
+		min-height: 320px;
+		overflow-y: auto;
+		padding: 0.5rem 0.25rem 1rem 0.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+		scroll-behavior: smooth;
+	}
+
+	.chat-stack::-webkit-scrollbar {
+		width: 8px;
+	}
+	.chat-stack::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.chat-stack::-webkit-scrollbar-thumb {
+		background: var(--color-bot-border);
+		border-radius: 4px;
+	}
+	.chat-stack::-webkit-scrollbar-thumb:hover {
+		background: var(--color-ink-muted);
+	}
+
+	.turn {
+		display: flex;
+		gap: 0.6rem;
+		animation: fadeUp 0.25s ease-out;
+	}
+
+	.user-turn {
+		justify-content: flex-end;
+	}
+
+	.bot-turn {
+		align-items: flex-start;
+	}
+
+	.bot-avatar {
+		flex-shrink: 0;
+		padding-top: 0.25rem;
+	}
+
+	.bot-body {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.bubble {
+		max-width: 70%;
+		background: var(--color-primary);
+		color: white;
+		padding: 0.7rem 1rem;
+		border-radius: 14px 14px 4px 14px;
+		box-shadow: 0 4px 14px -8px rgba(26, 26, 46, 0.25);
+	}
+
+	.user-bubble.subtle {
+		background: var(--color-surface-warm);
+		color: var(--color-ink);
+		border: 1px solid var(--color-bot-border);
+	}
+
+	.meta {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		opacity: 0.8;
+		margin-bottom: 0.3rem;
+	}
+
+	.user-text {
+		margin: 0;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		word-break: break-word;
+	}
+
+	.typing {
+		display: inline-flex;
+		gap: 6px;
+		padding: 0.85rem 1.1rem;
+		background: var(--color-surface-card);
+		border: 1px solid var(--color-bot-border);
+		border-radius: 14px 14px 14px 4px;
+		width: fit-content;
+	}
+
+	.typing span {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: var(--color-ink-muted);
+		animation: bounce 1.2s infinite ease-in-out both;
+	}
+
+	.typing span:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+	.typing span:nth-child(3) {
+		animation-delay: 0.3s;
 	}
 
 	.error-banner {
-		margin-top: 1rem;
+		margin-top: 0.75rem;
 		padding: 0.75rem 1rem;
 		background: rgba(212, 72, 72, 0.07);
 		border-left: 3px solid var(--color-error);
@@ -279,9 +438,13 @@
 		font-weight: 600;
 	}
 
-	.result-area {
-		margin-top: 2rem;
-		min-height: 200px;
+	.composer {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--color-bot-border);
+		position: sticky;
+		bottom: 0;
+		background: var(--color-surface, transparent);
 	}
 
 	.prompt-empty {
@@ -327,7 +490,7 @@
 	}
 
 	.end-cta {
-		margin-top: 4rem;
+		margin-top: 2rem;
 		text-align: center;
 	}
 
@@ -377,6 +540,28 @@
 		overflow-y: auto;
 	}
 
+	@keyframes fadeUp {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes bounce {
+		0%, 80%, 100% {
+			transform: scale(0.6);
+			opacity: 0.4;
+		}
+		40% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+
 	@media (max-width: 920px) {
 		.theory-mode {
 			grid-template-columns: 1fr;
@@ -388,6 +573,12 @@
 		}
 		.side-inner {
 			max-height: none;
+		}
+		.bubble {
+			max-width: 85%;
+		}
+		.chat-stack {
+			max-height: 60vh;
 		}
 	}
 </style>

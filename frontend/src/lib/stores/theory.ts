@@ -9,15 +9,30 @@ export interface QueryHistoryEntry {
 	timestamp: number;
 }
 
+export type TheoryTurn =
+	| {
+			id: string;
+			kind: 'query';
+			question: string;
+			response: QueryResponse;
+			timestamp: number;
+	  }
+	| {
+			id: string;
+			kind: 'concept';
+			concept: ConceptDetail;
+			related: ConceptSummary[];
+			fromConceptId?: string | null;
+			timestamp: number;
+	  };
+
+export const turns = writable<TheoryTurn[]>([]);
 export const lastQuery = writable<string>('');
-export const lastResponse = writable<QueryResponse | null>(null);
-export const selectedConcept = writable<ConceptDetail | null>(null);
-export const selectedConceptRelated = writable<ConceptSummary[]>([]);
 export const isLoading = writable<boolean>(false);
 export const queryError = writable<string | null>(null);
 export const queryHistory = writable<QueryHistoryEntry[]>([]);
 
-const MAX_HISTORY = 5;
+const MAX_HISTORY = 10;
 
 function genId() {
 	return Math.random().toString(36).slice(2, 10);
@@ -37,11 +52,40 @@ export function pushHistory(question: string, response: QueryResponse) {
 	});
 }
 
+export function pushQueryTurn(question: string, response: QueryResponse) {
+	turns.update((items) => [
+		...items,
+		{
+			id: genId(),
+			kind: 'query',
+			question,
+			response,
+			timestamp: Date.now()
+		}
+	]);
+}
+
+export function pushConceptTurn(
+	concept: ConceptDetail,
+	related: ConceptSummary[],
+	fromConceptId: string | null = null
+) {
+	turns.update((items) => [
+		...items,
+		{
+			id: genId(),
+			kind: 'concept',
+			concept,
+			related,
+			fromConceptId,
+			timestamp: Date.now()
+		}
+	]);
+}
+
 export function clearTheory() {
+	turns.set([]);
 	lastQuery.set('');
-	lastResponse.set(null);
-	selectedConcept.set(null);
-	selectedConceptRelated.set([]);
 	isLoading.set(false);
 	queryError.set(null);
 	queryHistory.set([]);

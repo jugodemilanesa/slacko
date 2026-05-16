@@ -1,11 +1,28 @@
 <script lang="ts">
 	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
 	import { get } from 'svelte/store';
+	import SlackoTip from '$lib/components/SlackoTip.svelte';
+	import Latex from '$lib/components/Latex.svelte';
+	import { objectiveLatex } from '$lib/math/formula';
 
 	let var1Label = $state('');
 	let var1Coeff = $state<number | string>('');
 	let var2Label = $state('');
 	let var2Coeff = $state<number | string>('');
+
+	const preview = $derived.by(() => {
+		const m = get(model);
+		const c1 = var1Coeff === '' ? 0 : Number(var1Coeff);
+		const c2 = var2Coeff === '' ? 0 : Number(var2Coeff);
+		const draftModel = {
+			...m,
+			variables: [
+				{ name: 'x1', label: var1Label, coefficient: c1 },
+				{ name: 'x2', label: var2Label, coefficient: c2 }
+			]
+		};
+		return objectiveLatex(draftModel);
+	});
 
 	async function submit() {
 		if (!var1Label.trim() || !var2Label.trim() || var1Coeff === '' || var2Coeff === '') return;
@@ -36,14 +53,17 @@
 	}
 </script>
 
-<div class="step-enter space-y-4">
+<div class="step-enter space-y-3">
 	<div class="grid grid-cols-2 gap-4">
 		<!-- Variable 1 -->
 		<div class="space-y-2 p-4 rounded-xl bg-surface-warm border border-bot-border">
 			<div class="font-mono text-sm font-semibold text-primary">x1</div>
 			<div>
-				<label class="text-xs text-ink-muted block mb-1">Nombre / etiqueta</label>
+				<label class="text-xs text-ink-muted block mb-1" for="var1-label">
+					Nombre / etiqueta
+				</label>
 				<input
+					id="var1-label"
 					type="text"
 					bind:value={var1Label}
 					placeholder="ej: balones"
@@ -52,12 +72,16 @@
 				/>
 			</div>
 			<div>
-				<label class="text-xs text-ink-muted block mb-1">Coeficiente en Z</label>
+				<label class="text-xs text-ink-muted block mb-1" for="var1-coef">
+					Coeficiente en Z
+				</label>
 				<input
+					id="var1-coef"
 					type="number"
 					bind:value={var1Coeff}
 					placeholder="ej: 2"
 					step="any"
+					inputmode="decimal"
 					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white font-mono
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
@@ -68,8 +92,11 @@
 		<div class="space-y-2 p-4 rounded-xl bg-surface-warm border border-bot-border">
 			<div class="font-mono text-sm font-semibold text-primary">x2</div>
 			<div>
-				<label class="text-xs text-ink-muted block mb-1">Nombre / etiqueta</label>
+				<label class="text-xs text-ink-muted block mb-1" for="var2-label">
+					Nombre / etiqueta
+				</label>
 				<input
+					id="var2-label"
 					type="text"
 					bind:value={var2Label}
 					placeholder="ej: ajedrez"
@@ -78,17 +105,30 @@
 				/>
 			</div>
 			<div>
-				<label class="text-xs text-ink-muted block mb-1">Coeficiente en Z</label>
+				<label class="text-xs text-ink-muted block mb-1" for="var2-coef">
+					Coeficiente en Z
+				</label>
 				<input
+					id="var2-coef"
 					type="number"
 					bind:value={var2Coeff}
 					placeholder="ej: 4"
 					step="any"
+					inputmode="decimal"
 					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white font-mono
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
 			</div>
 		</div>
+	</div>
+
+	<!-- LaTeX preview -->
+	<div class="formula-preview">
+		<div class="formula-label">
+			<span class="dot" aria-hidden="true">◆</span>
+			Función objetivo
+		</div>
+		<Latex expr={preview} display />
 	</div>
 
 	<button
@@ -99,4 +139,59 @@
 	>
 		Confirmar variables
 	</button>
+
+	<SlackoTip kind="concept" title="¿Qué es una variable de decisión?">
+		<p>
+			Una <strong>variable de decisión</strong> representa una cantidad desconocida
+			que el problema nos pide determinar — típicamente cuánto fabricar, cuánto
+			usar, o cuánto asignar de cada cosa.
+		</p>
+	</SlackoTip>
+
+	<SlackoTip kind="tip" title="Sobre los decimales">
+		<p>
+			Usá <strong>punto</strong> como separador decimal (por ejemplo
+			<code>0.25</code>, no <code>0,25</code>). Si el coeficiente es exacto y entero
+			(como <code>2</code>), no hace falta escribir <code>.0</code>.
+		</p>
+	</SlackoTip>
 </div>
+
+<style>
+	.formula-preview {
+		background: linear-gradient(
+			180deg,
+			var(--color-surface-card, #fffaf2) 0%,
+			var(--color-surface-warm, #fff7e8) 100%
+		);
+		border: 1px solid var(--color-bot-border);
+		border-radius: 10px;
+		padding: 0.75rem 1rem 0.85rem 1rem;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.formula-preview::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-left: 3px solid var(--color-accent);
+		pointer-events: none;
+	}
+
+	.formula-label {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.25rem;
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.dot {
+		font-size: 0.55rem;
+	}
+</style>
