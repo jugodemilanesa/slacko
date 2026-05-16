@@ -2,11 +2,13 @@
 	let {
 		value = $bindable(''),
 		onSubmit,
-		loading = false
+		loading = false,
+		compact = false
 	}: {
 		value: string;
 		onSubmit: (q: string) => void;
 		loading?: boolean;
+		compact?: boolean;
 	} = $props();
 
 	let inputEl = $state<HTMLTextAreaElement | undefined>();
@@ -46,21 +48,23 @@
 	}
 </script>
 
-<div class="search-wrap step-enter">
-	<div class="rule-top">
-		<span class="rule-line" aria-hidden="true"></span>
-		<span class="rule-label font-mono">consulta · teoría</span>
-		<span class="rule-line" aria-hidden="true"></span>
-	</div>
+<div class="search-wrap step-enter" class:compact>
+	{#if !compact}
+		<div class="rule-top">
+			<span class="rule-line" aria-hidden="true"></span>
+			<span class="rule-label font-mono">consulta · teoría</span>
+			<span class="rule-line" aria-hidden="true"></span>
+		</div>
 
-	<h1 class="hero-title">
-		El concepto te lo busca <span class="ampersand">&</span> te lo explica.
-	</h1>
+		<h1 class="hero-title">
+			El concepto te lo busca <span class="ampersand">&</span> te lo explica.
+		</h1>
 
-	<p class="hero-sub">
-		Preguntá lo que quieras de Programación Lineal — definiciones, formas, métodos, casos
-		especiales. Te respondo con el material de cátedra.
-	</p>
+		<p class="hero-sub">
+			Preguntá lo que quieras de Programación Lineal — definiciones, formas, métodos, casos
+			especiales. Te respondo con el material de cátedra.
+		</p>
+	{/if}
 
 	<form
 		class="search"
@@ -69,7 +73,9 @@
 			submit();
 		}}
 	>
-		<label class="search-label" for="theory-q">Tu pregunta</label>
+		{#if !compact}
+			<label class="search-label" for="theory-q">Tu pregunta</label>
+		{/if}
 		<div class="input-row">
 			<textarea
 				id="theory-q"
@@ -93,10 +99,12 @@
 				{/if}
 			</button>
 		</div>
-		<div class="hint">
-			<span class="kbd">Enter</span> para preguntar &nbsp;·&nbsp; <span class="kbd">Shift</span> +
-			<span class="kbd">Enter</span> para nueva línea
-		</div>
+		{#if !compact}
+			<div class="hint">
+				<span class="kbd">Enter</span> para preguntar &nbsp;·&nbsp; <span class="kbd">Shift</span> +
+				<span class="kbd">Enter</span> para nueva línea
+			</div>
+		{/if}
 	</form>
 </div>
 
@@ -105,6 +113,26 @@
 		max-width: 720px;
 		margin: 0 auto;
 		text-align: center;
+	}
+
+	.search-wrap.compact {
+		max-width: 100%;
+		text-align: left;
+	}
+
+	.search-wrap.compact .search {
+		padding: 0.55rem 0.7rem 0.6rem 0.85rem;
+		border-radius: 12px;
+	}
+
+	.search-wrap.compact .input {
+		font-size: 1.05rem;
+		min-height: 2.2rem;
+	}
+
+	.search-wrap.compact .submit {
+		padding: 0.55rem 0.95rem;
+		font-size: 0.8rem;
 	}
 
 	.rule-top {

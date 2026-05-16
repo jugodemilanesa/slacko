@@ -10,14 +10,12 @@
 		lastQuery,
 		isLoading,
 		queryError,
-		queryHistory,
 		turns,
 		pushHistory,
 		pushQueryTurn,
 		pushConceptTurn,
 		clearTheory
 	} from '$lib/stores/theory';
-	import { resetChat } from '$lib/stores/chat';
 
 	import TheorySearch from '$lib/components/theory/TheorySearch.svelte';
 	import ConceptCard from '$lib/components/theory/ConceptCard.svelte';
@@ -25,18 +23,17 @@
 	import CategoryBrowser from '$lib/components/theory/CategoryBrowser.svelte';
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 
-	import type { Expression } from '$lib/stores/chat';
-
 	let question = $state('');
 	let categories = $state<TheoryCategory[]>([]);
 	let stackEl = $state<HTMLDivElement | null>(null);
+	let drawerOpen = $state(false);
 
 	onMount(async () => {
 		try {
 			const res = await listCategories();
 			categories = res.categories;
 		} catch {
-			// silent — browser still works
+			// silent
 		}
 	});
 
@@ -74,16 +71,17 @@
 		}
 	}
 
-	async function openConcept(id: string, fromId: string | null = null) {
+	async function openConcept(id: string, _fromId: string | null = null) {
 		isLoading.set(true);
 		queryError.set(null);
+		drawerOpen = false;
 		await scrollToBottom();
 		try {
 			const [res] = await Promise.all([
 				getConcept(id),
 				new Promise((r) => setTimeout(r, 300))
 			]);
-			pushConceptTurn(res.concept, res.related, fromId);
+			pushConceptTurn(res.concept, res.related, _fromId);
 			await scrollToBottom();
 		} catch (e) {
 			queryError.set(e instanceof Error ? e.message : 'Error al cargar concepto');
@@ -92,85 +90,148 @@
 		}
 	}
 
-	function backToStart() {
-		clearTheory();
-		resetChat();
-	}
-
 	const hasTurns = $derived($turns.length > 0);
-
-	const slakingExpression: Expression = $derived.by(() => {
-		if ($isLoading) return 'thinking';
-		if ($queryError) return 'sad';
-		if (!hasTurns) return 'happy';
-		const last = $turns[$turns.length - 1];
-		if (last.kind === 'query' && !last.response.matched) return 'sad';
-		return 'explain';
-	});
-
-	const slakingMessage = $derived.by(() => {
-		if ($isLoading) return 'Estoy buscando en la bibliografía…';
-		if ($queryError) return 'Algo salió mal con la búsqueda.';
-		if (!hasTurns) return '¿Sobre qué tema querés repasar?';
-		const last = $turns[$turns.length - 1];
-		if (last.kind === 'query' && !last.response.matched) {
-			return 'No encontré exactamente eso. Probá con otra forma o explorá las sugerencias.';
-		}
-		return 'Seguí preguntando o explorá los conceptos relacionados.';
-	});
 
 	function formatTime(ts: number): string {
 		const d = new Date(ts);
 		return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 	}
+
+	function toggleDrawer() {
+		drawerOpen = !drawerOpen;
+	}
+
+	function handleEscape(e: KeyboardEvent) {
+		if (e.key === 'Escape' && drawerOpen) drawerOpen = false;
+	}
 </script>
 
-<div class="theory-mode">
-	<div class="content">
-		<div class="slacko-strip" role="status" aria-live="polite">
-			<SlakingAvatar expression={slakingExpression} size="lg" ring floating />
-			<div class="slacko-bubble">
-				{slakingMessage}
-			</div>
-			{#if hasTurns}
-				<button type="button" class="clear-btn" onclick={() => clearTheory()}>
-					Limpiar chat
-				</button>
-			{/if}
-		</div>
+<svelte:window onkeydown={handleEscape} />
 
-		<div class="chat-stack" bind:this={stackEl} aria-live="polite">
-			{#if !hasTurns}
-				<div class="prompt-empty">
-					<div class="ornament-row" aria-hidden="true">
-						<span class="dot"></span>
-						<span class="line"></span>
-						<span class="diamond">◆</span>
-						<span class="line"></span>
-						<span class="dot"></span>
-					</div>
-					<p class="prompt-msg">
-						Escribí una pregunta abajo o explorá el temario por categoría.
-					</p>
+<div class="theory-page" class:has-turns={hasTurns}>
+	<!-- Background ornament: paper-like radial wash + faint grid -->
+	<div class="paper-bg" aria-hidden="true"></div>
+
+	<!-- Compact sticky header (only while chatting) -->
+	{#if hasTurns}
+		<header class="th-header compact">
+			<div class="th-header-inner">
+				<div class="th-header-left">
+					<span class="chip">
+						<span class="chip-dot" aria-hidden="true"></span>
+						Modo teoría
+					</span>
+					<span class="turn-count">
+						{$turns.length} {$turns.length === 1 ? 'consulta' : 'consultas'}
+					</span>
 				</div>
+
+				<div class="th-header-right">
+					<button
+						type="button"
+						class="th-btn ghost"
+						onclick={toggleDrawer}
+						aria-expanded={drawerOpen}
+						aria-controls="theory-drawer"
+					>
+						<span class="btn-glyph" aria-hidden="true">§</span>
+						Explorar temas
+					</button>
+					<button
+						type="button"
+						class="th-btn subtle"
+						onclick={() => clearTheory()}
+						title="Vaciar el cuaderno de consultas"
+					>
+						Limpiar
+					</button>
+				</div>
+			</div>
+		</header>
+	{/if}
+
+	<!-- Main scroll area -->
+	<div class="th-scroll" bind:this={stackEl}>
+		<div class="th-column">
+			{#if !hasTurns}
+				<!-- Idle hero: two-column landing -->
+				<section class="hero-grid" aria-label="Bienvenida">
+					<div class="hero-left">
+						<div class="hero-overline">
+							<span class="ov-dot"></span>
+							Cuaderno de teoría
+							<span class="ov-dot"></span>
+						</div>
+
+						<h1 class="hero-title">
+							<span class="drop">¿</span>De qué tema querés
+							<em>conversar</em><span class="drop closing">?</span>
+						</h1>
+
+						<svg class="hero-arc" viewBox="0 0 320 60" aria-hidden="true">
+							<path
+								d="M5 40 Q 80 5, 160 30 T 315 40"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1"
+								stroke-linecap="round"
+								opacity="0.45"
+							/>
+							<circle cx="160" cy="30" r="2.5" fill="currentColor" />
+						</svg>
+
+						<p class="hero-kicker">
+							Preguntame sobre <em>variables slack</em>, <em>región factible</em>,
+							<em>casos especiales</em> de la Programación Lineal, o lo que sea — voy a
+							buscar en la bibliografía de la cátedra y devolverte el concepto con sus
+							relacionados.
+						</p>
+
+						<div class="hero-cta-row">
+							<button
+								type="button"
+								class="hero-cta"
+								onclick={toggleDrawer}
+							>
+								<span class="cta-glyph">§</span>
+								Explorar por categoría
+								<span class="cta-arrow">→</span>
+							</button>
+							<div class="hero-avatar">
+								<SlakingAvatar expression="happy" size="md" ring floating />
+							</div>
+						</div>
+					</div>
+
+					<div class="hero-right">
+						<TheorySearch
+							bind:value={question}
+							loading={$isLoading}
+							onSubmit={runQuery}
+						/>
+					</div>
+				</section>
 			{:else}
+				<!-- Turn stack -->
 				{#each $turns as turn (turn.id)}
 					{#if turn.kind === 'query'}
 						<div class="turn user-turn">
-							<div class="bubble user-bubble">
-								<div class="meta">
+							<div class="user-bubble">
+								<div class="user-meta">
 									<span class="meta-label">Vos</span>
 									<span class="meta-time">{formatTime(turn.timestamp)}</span>
 								</div>
 								<p class="user-text">{turn.question}</p>
 							</div>
 						</div>
+
 						<div class="turn bot-turn">
-							<div class="bot-avatar">
+							<div class="bot-marginalia" aria-hidden="true">
 								<SlakingAvatar
 									expression={turn.response.matched ? 'explain' : 'sad'}
 									size="sm"
 								/>
+								<span class="margin-line"></span>
 							</div>
 							<div class="bot-body">
 								{#if turn.response.matched}
@@ -178,7 +239,12 @@
 										concept={turn.response.concept}
 										related={turn.response.related}
 										categoryTitle={categoryTitle(turn.response.concept.category)}
-										onSelectRelated={(id) => openConcept(id, turn.response.matched ? turn.response.concept.id : null)}
+										onSelectRelated={(id) =>
+											openConcept(
+												id,
+												turn.response.matched ? turn.response.concept.id : null
+											)
+										}
 									/>
 								{:else}
 									<EmptyResult
@@ -192,17 +258,20 @@
 						</div>
 					{:else}
 						<div class="turn user-turn">
-							<div class="bubble user-bubble subtle">
-								<div class="meta">
+							<div class="user-bubble subtle">
+								<div class="user-meta">
 									<span class="meta-label">Vos</span>
 									<span class="meta-time">{formatTime(turn.timestamp)}</span>
 								</div>
-								<p class="user-text">Quiero ver: <strong>{turn.concept.title}</strong></p>
+								<p class="user-text">
+									Quiero ver:&nbsp;<strong>{turn.concept.title}</strong>
+								</p>
 							</div>
 						</div>
 						<div class="turn bot-turn">
-							<div class="bot-avatar">
+							<div class="bot-marginalia" aria-hidden="true">
 								<SlakingAvatar expression="explain" size="sm" />
+								<span class="margin-line"></span>
 							</div>
 							<div class="bot-body">
 								<ConceptCard
@@ -218,8 +287,9 @@
 
 				{#if $isLoading}
 					<div class="turn bot-turn">
-						<div class="bot-avatar">
+						<div class="bot-marginalia" aria-hidden="true">
 							<SlakingAvatar expression="thinking" size="sm" />
+							<span class="margin-line"></span>
 						</div>
 						<div class="bot-body">
 							<div class="typing">
@@ -229,174 +299,514 @@
 					</div>
 				{/if}
 			{/if}
+
+			{#if $queryError}
+				<div class="error-banner" role="alert">
+					<span class="error-glyph" aria-hidden="true">!</span>
+					<div>
+						<div class="error-label">Algo falló con la búsqueda</div>
+						<div class="error-msg">{$queryError}</div>
+					</div>
+				</div>
+			{/if}
 		</div>
-
-		{#if $queryError}
-			<div class="error-banner">
-				<span class="error-label">Algo falló:</span> {$queryError}
-			</div>
-		{/if}
-
-		<div class="composer">
-			<TheorySearch
-				bind:value={question}
-				loading={$isLoading}
-				onSubmit={runQuery}
-			/>
-		</div>
-
-		<footer class="end-cta">
-			<div class="end-rule" aria-hidden="true"></div>
-			<button type="button" class="end-btn" onclick={backToStart}>
-				← Volver al inicio
-			</button>
-			<p class="end-hint">¿Querés resolver un problema? Empezá un flujo nuevo.</p>
-		</footer>
 	</div>
 
-	<aside class="side">
-		<div class="side-inner">
+	<!-- Composer (only while chatting) -->
+	{#if hasTurns}
+		<div class="composer">
+			<div class="composer-inner">
+				<TheorySearch
+					bind:value={question}
+					loading={$isLoading}
+					onSubmit={runQuery}
+					compact
+				/>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Drawer: floating categories panel -->
+	{#if drawerOpen}
+		<div
+			class="drawer-backdrop"
+			role="button"
+			tabindex="-1"
+			aria-label="Cerrar panel"
+			onclick={() => (drawerOpen = false)}
+			onkeydown={(e) => e.key === 'Enter' && (drawerOpen = false)}
+		></div>
+	{/if}
+	<aside
+		id="theory-drawer"
+		class="drawer"
+		class:open={drawerOpen}
+		aria-hidden={!drawerOpen}
+		aria-label="Temario por categoría"
+	>
+		<header class="drawer-head">
+			<div>
+				<div class="drawer-overline">Explorar</div>
+				<h2 class="drawer-title">Temario</h2>
+			</div>
+			<button
+				type="button"
+				class="drawer-close"
+				onclick={() => (drawerOpen = false)}
+				aria-label="Cerrar panel"
+			>
+				×
+			</button>
+		</header>
+		<div class="drawer-body">
 			<CategoryBrowser onSelect={(id) => openConcept(id, null)} />
 		</div>
 	</aside>
 </div>
 
 <style>
-	.theory-mode {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 280px;
-		gap: 2.5rem;
-		max-width: 1180px;
-		margin: 0 auto;
-		padding: 2rem 1.5rem 4rem 1.5rem;
-		align-items: start;
-	}
-
-	.content {
-		min-width: 0;
+	/* Layout shell --------------------------------------------------------- */
+	.theory-page {
+		position: relative;
 		display: flex;
 		flex-direction: column;
+		min-height: 100%;
+		isolation: isolate;
 	}
 
-	.slacko-strip {
+	.paper-bg {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background:
+			radial-gradient(
+				ellipse 80% 40% at 50% 0%,
+				rgba(212, 168, 83, 0.08) 0%,
+				transparent 70%
+			),
+			radial-gradient(
+				ellipse 60% 70% at 100% 100%,
+				rgba(59, 76, 192, 0.04) 0%,
+				transparent 60%
+			);
+		pointer-events: none;
+	}
+
+	.paper-bg::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background-image:
+			linear-gradient(
+				to right,
+				rgba(212, 168, 83, 0.05) 1px,
+				transparent 1px
+			);
+		background-size: 64px 100%;
+		opacity: 0.25;
+		mask-image: linear-gradient(to bottom, transparent, black 40%, transparent);
+	}
+
+	/* Header --------------------------------------------------------------- */
+	.th-header {
+		position: sticky;
+		top: 0;
+		z-index: 5;
+		padding: 1rem 1.5rem 0.85rem 1.5rem;
+		transition: padding 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+	}
+
+	.th-header.compact {
+		padding: 0.55rem 1.5rem;
+		background: linear-gradient(
+			to bottom,
+			rgba(255, 250, 242, 0.96),
+			rgba(255, 250, 242, 0.85)
+		);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border-bottom: 1px solid var(--color-bot-border);
+	}
+
+	.th-header-inner {
+		max-width: 960px;
+		margin: 0 auto;
 		display: flex;
 		align-items: center;
-		gap: 0.9rem;
-		margin-bottom: 1rem;
-		padding: 0.75rem 1rem;
-		background: var(--color-surface-card);
-		border: 1px solid var(--color-bot-border);
-		border-radius: 14px;
+		justify-content: space-between;
+		gap: 1rem;
 	}
 
-	.slacko-bubble {
+	.th-header-left {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		background: rgba(212, 168, 83, 0.08);
+		border: 1px solid rgba(212, 168, 83, 0.35);
+		padding: 0.25rem 0.65rem;
+		border-radius: 999px;
+	}
+
+	.chip-dot {
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: var(--color-accent);
+		animation: pulse 2.4s infinite ease-in-out;
+	}
+
+	.turn-count {
 		font-family: var(--font-display);
-		font-size: 0.95rem;
-		color: var(--color-ink);
 		font-style: italic;
-		line-height: 1.4;
-		flex: 1;
+		font-size: 0.78rem;
+		color: var(--color-ink-muted);
 	}
 
-	.clear-btn {
+	.th-header-right {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.th-btn {
 		font-family: var(--font-body);
-		font-size: 0.7rem;
-		color: var(--color-ink-muted);
-		background: transparent;
-		border: 1px solid var(--color-bot-border);
-		padding: 0.35rem 0.7rem;
+		font-size: 0.78rem;
+		padding: 0.45rem 0.95rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.15s ease;
-		white-space: nowrap;
+		transition: all 0.18s ease;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		border: 1px solid var(--color-bot-border);
+		background: var(--color-surface-card);
+		color: var(--color-ink);
 	}
 
-	.clear-btn:hover {
+	.th-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+
+	.th-btn.ghost {
+		background: white;
+	}
+
+	.th-btn.subtle {
+		background: transparent;
+		color: var(--color-ink-muted);
+		border-style: dashed;
+	}
+
+	.th-btn.subtle:hover {
 		color: var(--color-error);
 		border-color: var(--color-error);
+		border-style: solid;
 	}
 
-	.chat-stack {
-		max-height: calc(100vh - 22rem);
-		min-height: 320px;
+	.btn-glyph {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 0.95rem;
+		color: var(--color-accent);
+		line-height: 1;
+	}
+
+	/* Scroll + column ------------------------------------------------------ */
+	.th-scroll {
+		flex: 1;
 		overflow-y: auto;
-		padding: 0.5rem 0.25rem 1rem 0.25rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
 		scroll-behavior: smooth;
 	}
 
-	.chat-stack::-webkit-scrollbar {
+	.th-scroll::-webkit-scrollbar {
 		width: 8px;
 	}
-	.chat-stack::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	.chat-stack::-webkit-scrollbar-thumb {
+	.th-scroll::-webkit-scrollbar-thumb {
 		background: var(--color-bot-border);
 		border-radius: 4px;
 	}
-	.chat-stack::-webkit-scrollbar-thumb:hover {
+	.th-scroll::-webkit-scrollbar-thumb:hover {
 		background: var(--color-ink-muted);
 	}
 
-	.turn {
+	.th-column {
+		max-width: 960px;
+		margin: 0 auto;
+		padding: 1.25rem 1.5rem 2.5rem 1.5rem;
 		display: flex;
-		gap: 0.6rem;
-		animation: fadeUp 0.25s ease-out;
+		flex-direction: column;
+		gap: 1.5rem;
 	}
 
-	.user-turn {
-		justify-content: flex-end;
+	.has-turns .th-column {
+		padding-top: 1.5rem;
 	}
 
-	.bot-turn {
-		align-items: flex-start;
+	/* Hero (idle state) ---------------------------------------------------- */
+	.hero-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 2.5rem;
+		padding: 2.5rem 0 2rem 0;
+		align-items: center;
+		animation: fadeUp 0.5s ease-out;
 	}
 
-	.bot-avatar {
-		flex-shrink: 0;
-		padding-top: 0.25rem;
+	.hero-left {
+		min-width: 0;
+		position: relative;
 	}
 
-	.bot-body {
-		flex: 1;
+	.hero-left::before {
+		content: '';
+		position: absolute;
+		left: -1.25rem;
+		top: 0.25rem;
+		bottom: 0.25rem;
+		width: 1px;
+		background: linear-gradient(
+			180deg,
+			transparent,
+			var(--color-accent) 30%,
+			var(--color-accent) 70%,
+			transparent
+		);
+		opacity: 0.4;
+	}
+
+	.hero-right {
 		min-width: 0;
 	}
 
-	.bubble {
-		max-width: 70%;
-		background: var(--color-primary);
+	@media (max-width: 880px) {
+		.hero-grid {
+			grid-template-columns: 1fr;
+			gap: 1.5rem;
+			padding: 1.5rem 0 1rem 0;
+		}
+		.hero-left::before {
+			display: none;
+		}
+	}
+
+	.hero-overline {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.32em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 1.1rem;
+	}
+
+	.ov-dot {
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: currentColor;
+		opacity: 0.7;
+	}
+
+	.hero-title {
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 3.2vw, 2.8rem);
+		line-height: 1.05;
+		color: var(--color-ink);
+		margin: 0 0 0.85rem 0;
+		letter-spacing: -0.015em;
+		font-weight: 400;
+	}
+
+	.hero-title em {
+		font-style: italic;
+		color: var(--color-primary);
+	}
+
+	.hero-title .drop {
+		color: var(--color-accent);
+		font-style: italic;
+		font-size: 1.15em;
+		display: inline-block;
+		transform: translateY(0.06em);
+	}
+
+	.hero-title .drop.closing {
+		transform: translateY(0.06em) rotate(180deg);
+		display: inline-block;
+	}
+
+	.hero-arc {
+		display: block;
+		width: 220px;
+		height: 38px;
+		color: var(--color-accent);
+		margin: 0.3rem 0 1.25rem 0;
+	}
+
+	.hero-kicker {
+		font-family: var(--font-display);
+		font-size: 1.1rem;
+		line-height: 1.65;
+		color: var(--color-ink-light);
+		font-style: italic;
+		max-width: 580px;
+		margin: 0 0 1.85rem 0;
+	}
+
+	.hero-kicker em {
+		color: var(--color-primary);
+		font-style: italic;
+	}
+
+	.hero-cta-row {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.hero-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.75rem 1.35rem;
+		background: var(--color-ink);
 		color: white;
-		padding: 0.7rem 1rem;
-		border-radius: 14px 14px 4px 14px;
-		box-shadow: 0 4px 14px -8px rgba(26, 26, 46, 0.25);
+		border: none;
+		border-radius: 999px;
+		font-family: var(--font-body);
+		font-size: 0.88rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.hero-cta:hover {
+		background: var(--color-primary);
+		transform: translateY(-2px);
+		box-shadow: 0 10px 28px -12px rgba(59, 76, 192, 0.55);
+	}
+
+	.cta-glyph {
+		font-family: var(--font-display);
+		font-style: italic;
+		color: var(--color-accent);
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.cta-arrow {
+		font-family: var(--font-display);
+		transition: transform 0.18s ease;
+	}
+
+	.hero-cta:hover .cta-arrow {
+		transform: translateX(3px);
+	}
+
+	.hero-avatar {
+		opacity: 0.85;
+	}
+
+	/* Turns ---------------------------------------------------------------- */
+	.turn {
+		animation: fadeUp 0.3s ease-out;
+	}
+
+	.user-turn {
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	.user-bubble {
+		max-width: 78%;
+		background: linear-gradient(
+			180deg,
+			var(--color-primary),
+			color-mix(in srgb, var(--color-primary) 88%, var(--color-ink) 12%)
+		);
+		color: white;
+		padding: 0.75rem 1.05rem 0.8rem 1.05rem;
+		border-radius: 16px 16px 4px 16px;
+		box-shadow:
+			0 1px 0 rgba(26, 26, 46, 0.04),
+			0 12px 24px -16px rgba(59, 76, 192, 0.45);
 	}
 
 	.user-bubble.subtle {
-		background: var(--color-surface-warm);
+		background: var(--color-surface-card);
 		color: var(--color-ink);
 		border: 1px solid var(--color-bot-border);
 	}
 
-	.meta {
+	.user-meta {
 		display: flex;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: 0.8rem;
 		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.12em;
+		font-size: 0.55rem;
+		letter-spacing: 0.2em;
 		text-transform: uppercase;
-		opacity: 0.8;
+		opacity: 0.85;
 		margin-bottom: 0.3rem;
 	}
 
 	.user-text {
 		margin: 0;
+		font-family: var(--font-body);
 		font-size: 0.95rem;
 		line-height: 1.5;
 		word-break: break-word;
+	}
+
+	.user-bubble.subtle .user-text strong {
+		font-weight: 600;
+		color: var(--color-primary);
+	}
+
+	.bot-turn {
+		display: grid;
+		grid-template-columns: 56px 1fr;
+		gap: 1rem;
+		align-items: flex-start;
+	}
+
+	.bot-marginalia {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.4rem;
+		padding-top: 0.3rem;
+	}
+
+	.margin-line {
+		width: 1px;
+		flex: 1;
+		min-height: 30px;
+		background: linear-gradient(
+			180deg,
+			var(--color-accent),
+			transparent 80%
+		);
+		opacity: 0.5;
+	}
+
+	.bot-body {
+		min-width: 0;
 	}
 
 	.typing {
@@ -424,130 +834,214 @@
 		animation-delay: 0.3s;
 	}
 
+	/* Error ---------------------------------------------------------------- */
 	.error-banner {
-		margin-top: 0.75rem;
-		padding: 0.75rem 1rem;
-		background: rgba(212, 72, 72, 0.07);
+		display: grid;
+		grid-template-columns: 36px 1fr;
+		gap: 0.85rem;
+		padding: 0.85rem 1rem 0.95rem 0.85rem;
+		background: rgba(212, 72, 72, 0.06);
 		border-left: 3px solid var(--color-error);
-		border-radius: 0 6px 6px 0;
-		font-size: 0.85rem;
+		border-radius: 0 8px 8px 0;
+		align-items: center;
+	}
+
+	.error-glyph {
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		border: 1px solid var(--color-error);
 		color: var(--color-error);
+		font-family: var(--font-display);
+		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.error-label {
-		font-weight: 600;
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-error);
+		margin-bottom: 0.1rem;
 	}
 
+	.error-msg {
+		font-size: 0.85rem;
+		color: var(--color-ink);
+	}
+
+	/* Composer (bottom block) --------------------------------------------- */
 	.composer {
-		margin-top: 1rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--color-bot-border);
-		position: sticky;
-		bottom: 0;
 		background: var(--color-surface, transparent);
+		border-top: 1px solid var(--color-bot-border);
+		padding: 1rem 1.5rem 1.1rem 1.5rem;
 	}
 
-	.prompt-empty {
-		text-align: center;
-		padding: 3rem 1rem;
-		color: var(--color-ink-muted);
+	.composer-inner {
+		max-width: 960px;
+		margin: 0 auto;
+		position: relative;
 	}
 
-	.ornament-row {
+	.composer-rule {
+		height: 1px;
+		background: linear-gradient(
+			to right,
+			transparent,
+			var(--color-accent),
+			transparent
+		);
+		opacity: 0.4;
+		margin-bottom: 0.75rem;
+	}
+
+	.composer-hint {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.6rem;
-		color: var(--color-accent);
-		margin-bottom: 1rem;
-		opacity: 0.7;
-	}
-
-	.dot {
-		width: 4px;
-		height: 4px;
-		border-radius: 50%;
-		background: currentColor;
-	}
-
-	.line {
-		width: 28px;
-		height: 1px;
-		background: currentColor;
-	}
-
-	.diamond {
+		gap: 0.5rem;
 		font-family: var(--font-display);
-		font-size: 0.75rem;
-	}
-
-	.prompt-msg {
-		font-family: var(--font-display);
-		font-size: 1.05rem;
 		font-style: italic;
+		font-size: 0.75rem;
 		color: var(--color-ink-muted);
+		margin: 0.55rem 0 0 0;
+	}
+
+	.key {
+		font-family: var(--font-mono);
+		font-style: normal;
+		font-size: 0.65rem;
+		padding: 0.1rem 0.4rem;
+		border: 1px solid var(--color-bot-border);
+		border-radius: 4px;
+		background: var(--color-surface-card);
+		color: var(--color-ink);
+	}
+
+	.hint-link {
+		background: transparent;
+		border: none;
+		padding: 0;
+		font: inherit;
+		color: var(--color-primary);
+		cursor: pointer;
+		text-decoration: underline;
+		text-decoration-style: dotted;
+		text-underline-offset: 3px;
+	}
+
+	.hint-link:hover {
+		color: var(--color-accent);
+	}
+
+	/* Drawer --------------------------------------------------------------- */
+	.drawer-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(26, 26, 46, 0.4);
+		backdrop-filter: blur(2px);
+		-webkit-backdrop-filter: blur(2px);
+		z-index: 50;
+		animation: fadeIn 0.2s ease-out;
+		border: none;
+		cursor: pointer;
+	}
+
+	.drawer {
+		position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: min(400px, 92vw);
+		background: var(--color-surface-card);
+		border-left: 1px solid var(--color-bot-border);
+		box-shadow: -24px 0 60px -32px rgba(26, 26, 46, 0.35);
+		z-index: 51;
+		transform: translateX(100%);
+		transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+		display: flex;
+		flex-direction: column;
+	}
+
+	.drawer.open {
+		transform: translateX(0);
+	}
+
+	.drawer-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		padding: 1.5rem 1.5rem 1rem 1.5rem;
+		border-bottom: 1px dashed var(--color-bot-border);
+	}
+
+	.drawer-overline {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.25rem;
+	}
+
+	.drawer-title {
+		font-family: var(--font-display);
+		font-size: 1.75rem;
+		color: var(--color-ink);
 		margin: 0;
+		line-height: 1;
 	}
 
-	.end-cta {
-		margin-top: 2rem;
-		text-align: center;
-	}
-
-	.end-rule {
-		width: 80px;
-		height: 1px;
-		background: var(--color-bot-border);
-		margin: 0 auto 1.5rem auto;
-	}
-
-	.end-btn {
-		font-family: var(--font-body);
-		font-size: 0.85rem;
-		color: var(--color-ink-light);
+	.drawer-close {
+		font-family: var(--font-display);
+		font-size: 1.8rem;
+		line-height: 1;
 		background: transparent;
 		border: 1px solid var(--color-bot-border);
-		padding: 0.55rem 1.1rem;
-		border-radius: 999px;
+		color: var(--color-ink-muted);
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
 		cursor: pointer;
 		transition: all 0.15s ease;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
 	}
 
-	.end-btn:hover {
-		color: var(--color-primary);
-		border-color: var(--color-primary);
-		background: rgba(59, 76, 192, 0.04);
+	.drawer-close:hover {
+		color: var(--color-error);
+		border-color: var(--color-error);
 	}
 
-	.end-hint {
-		font-size: 0.7rem;
-		color: var(--color-ink-muted);
-		margin: 0.6rem 0 0 0;
-		font-style: italic;
-	}
-
-	.side {
-		position: sticky;
-		top: 1rem;
-	}
-
-	.side-inner {
-		background: var(--color-surface-card);
-		border: 1px solid var(--color-bot-border);
-		border-radius: 12px;
-		padding: 1.5rem;
-		max-height: calc(100vh - 8rem);
+	.drawer-body {
+		flex: 1;
 		overflow-y: auto;
+		padding: 1.25rem 1.5rem 2rem 1.5rem;
 	}
 
+	/* Animations ----------------------------------------------------------- */
 	@keyframes fadeUp {
 		from {
 			opacity: 0;
-			transform: translateY(6px);
+			transform: translateY(8px);
 		}
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
 		}
 	}
 
@@ -562,23 +1056,46 @@
 		}
 	}
 
-	@media (max-width: 920px) {
-		.theory-mode {
-			grid-template-columns: 1fr;
-			gap: 1.5rem;
-			padding: 1.25rem;
+	@keyframes pulse {
+		0%, 100% {
+			transform: scale(1);
+			opacity: 1;
 		}
-		.side {
-			position: static;
+		50% {
+			transform: scale(1.4);
+			opacity: 0.45;
 		}
-		.side-inner {
-			max-height: none;
+	}
+
+	/* Responsive ----------------------------------------------------------- */
+	@media (max-width: 700px) {
+		.hero {
+			grid-template-columns: 32px 1fr;
+			gap: 0.85rem;
+			padding-top: 2rem;
 		}
-		.bubble {
-			max-width: 85%;
+		.bot-turn {
+			grid-template-columns: 36px 1fr;
+			gap: 0.55rem;
 		}
-		.chat-stack {
-			max-height: 60vh;
+		.user-bubble {
+			max-width: 88%;
+		}
+		.th-column {
+			padding: 1.25rem 1rem 2rem 1rem;
+		}
+		.composer {
+			padding: 0.8rem 1rem 0.95rem 1rem;
+		}
+		.th-header {
+			padding: 0.75rem 1rem;
+		}
+		.th-header-inner {
+			gap: 0.5rem;
+		}
+		.th-btn {
+			padding: 0.4rem 0.75rem;
+			font-size: 0.72rem;
 		}
 	}
 </style>
