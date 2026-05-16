@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { addMessage, advanceState, goToState, sendAssistantMessage } from '$lib/stores/chat';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
+	import { addMessage, advanceState, goToState, sendAssistantMessage, addTip } from '$lib/stores/chat';
+
+	$effect(() => {
+		addTip('tip', 'Si tenés un enunciado entre manos y querés resolverlo, elegí Paso a paso. Si necesitás repasar un concepto, entrá a Consulta teórica.', '¿Cuál elegir?');
+	});
 
 	async function selectGuided() {
 		addMessage('user', 'Quiero resolver paso a paso');
@@ -71,12 +74,4 @@
 		</div>
 	</button>
 
-	<SlackoTip kind="tip" title="¿Cuál elegir?">
-		<p>
-			Si tenés un enunciado entre manos y querés <strong>resolverlo</strong>, elegí
-			<em>Paso a paso</em>. Si necesitás <strong>repasar un concepto</strong> antes
-			(qué es una variable slack, qué pasa si no hay solución factible, etc.), entrá
-			a <em>Consulta teórica</em>.
-		</p>
-	</SlackoTip>
 </div>

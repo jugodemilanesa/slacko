@@ -3,14 +3,14 @@
 		model,
 		solverResult,
 		resetChat,
-		sendAssistantMessage
+		sendAssistantMessage,
+		addTip
 	} from '$lib/stores/chat';
 	import { get } from 'svelte/store';
 	import SolutionArtifacts from '$lib/components/SolutionArtifacts.svelte';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 	import Latex from '$lib/components/Latex.svelte';
 	import { computeSlacks, fmt, type SlackInfo } from '$lib/math/slack';
-	import { constraintLatex, objectiveLatex } from '$lib/math/formula';
+	import { constraintLatex } from '$lib/math/formula';
 
 	async function restart() {
 		resetChat();
@@ -59,6 +59,10 @@
 		}
 		return s.binding ? 'cumple la igualdad' : `desvío de ${fmt(Math.abs(s.slack))}`;
 	}
+
+	$effect(() => {
+		addTip('concept', 'Una holgura (slack) positiva en ≤ indica que te sobra ese recurso. Holgura cero significa que la restricción está activa (pasa por el óptimo). Un exceso (surplus) positivo en ≥ indica que producís por encima del mínimo.', '¿Qué nos dicen estos números?');
+	});
 </script>
 
 <div class="step-enter space-y-4">
@@ -157,25 +161,6 @@
 						</li>
 					{/each}
 				</ul>
-
-				<SlackoTip kind="concept" title="¿Qué nos dicen estos números?">
-					<ul>
-						<li>
-							Una <strong>holgura (slack)</strong> positiva en una restricción
-							<code>≤</code> indica que <em>te sobra ese recurso</em> en el plan óptimo:
-							no lo estás usando del todo.
-						</li>
-						<li>
-							Una <strong>holgura cero</strong> (restricción activa) significa que la
-							recta de esa restricción <em>pasa por el vértice óptimo</em>: el recurso
-							está agotado.
-						</li>
-						<li>
-							Un <strong>exceso (surplus)</strong> positivo en <code>≥</code> indica
-							que estás <em>produciendo por encima</em> del mínimo exigido.
-						</li>
-					</ul>
-				</SlackoTip>
 			</section>
 		{/if}
 	</article>

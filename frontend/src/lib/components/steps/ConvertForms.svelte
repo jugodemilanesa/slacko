@@ -5,11 +5,11 @@
 		addMessage,
 		advanceState,
 		standardFormResult,
-		sendAssistantMessage
+		sendAssistantMessage,
+		addTip
 	} from '$lib/stores/chat';
 	import { getStandardForm } from '$lib/api/solver';
 	import { get } from 'svelte/store';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 
 	let loading = $state(true);
 	let error = $state('');
@@ -48,6 +48,16 @@
 	const hasArtificials = $derived(
 		($standardFormResult?.artificial_variables.length ?? 0) > 0
 	);
+
+	$effect(() => {
+		addTip('concept', 'Para resolver el problema necesitamos que todas las restricciones sean igualdades. Slack: se suma a ≤ (recurso no usado). Surplus: se resta a ≥ (exceso). Artificiales: punto de partida para Simplex.', '¿Qué es la forma estándar?');
+	});
+
+	$effect(() => {
+		if (hasArtificials) {
+			addTip('tip', 'Como vamos a resolverlo por método gráfico (con sólo dos variables), las artificiales no aparecen en el gráfico ni en el análisis de vértices.', 'Nota');
+		}
+	});
 </script>
 
 <div class="step-enter space-y-3">
@@ -56,31 +66,6 @@
 	{:else if error}
 		<div class="error">{error}</div>
 	{:else if $standardFormResult}
-		<SlackoTip kind="concept" title="¿Qué es la forma estándar?">
-			<p>
-				Para resolver el problema necesitamos que <strong>todas las restricciones
-				sean igualdades</strong>. Para eso introducimos variables auxiliares:
-			</p>
-			<ul>
-				<li>
-					<strong>Slack (s)</strong>: se suma a una restricción <code>≤</code>;
-					representa el recurso <em>no utilizado</em>.
-				</li>
-				<li>
-					<strong>Surplus (e)</strong>: se resta a una restricción <code>≥</code>;
-					representa el <em>exceso</em> por encima del mínimo.
-				</li>
-				{#if hasArtificials}
-					<li>
-						<strong>Artificiales (a)</strong>: se usan en <code>≥</code> y <code>=</code>
-						para que el método algebraico (Simplex) tenga un punto de partida.
-						<em>No aparecen en el método gráfico</em>: te las muestro acá solo como
-						referencia teórica.
-					</li>
-				{/if}
-			</ul>
-		</SlackoTip>
-
 		<article class="standard-card">
 			<header class="card-head">
 				<span class="overline">Forma estándar</span>
@@ -124,16 +109,6 @@
 				</ol>
 			</div>
 		</article>
-
-		{#if hasArtificials}
-			<SlackoTip kind="tip" title="Nota">
-				<p>
-					Como vamos a resolverlo por <strong>método gráfico</strong> (con sólo dos
-					variables originales), las artificiales no nos van a aparecer en el gráfico
-					ni en el análisis de vértices — sólo viven en la forma estándar.
-				</p>
-			</SlackoTip>
-		{/if}
 
 		<button onclick={next} class="next-btn">
 			Continuar a resolución gráfica

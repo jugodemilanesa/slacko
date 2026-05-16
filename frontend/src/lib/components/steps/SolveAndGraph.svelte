@@ -5,7 +5,8 @@
 		addMessage,
 		advanceState,
 		solverResult,
-		sendAssistantMessage
+		sendAssistantMessage,
+		addTip
 	} from '$lib/stores/chat';
 	import { solveProblem } from '$lib/api/solver';
 	import { get } from 'svelte/store';
@@ -13,7 +14,6 @@
 	import GraphicalMethodTutorial from '$lib/components/GraphicalMethodTutorial.svelte';
 	import VertexAnalysisTutorial from '$lib/components/VertexAnalysisTutorial.svelte';
 	import SolutionArtifacts from '$lib/components/SolutionArtifacts.svelte';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 
 	type Phase =
 		| 'solving'
@@ -79,6 +79,10 @@
 			);
 		}
 	}
+
+	$effect(() => {
+		addTip('tip', 'Ya tenés la región factible. Para encontrar el óptimo formalmente, tenemos que examinar uno por uno los vértices del polígono.', 'Lo que sigue');
+	});
 </script>
 
 <div class="step-enter space-y-4">
@@ -123,18 +127,10 @@
 			/>
 
 			{#if phase === 'graph-shown'}
-				<div class="bridge">
-					<SlackoTip kind="tip" title="Lo que sigue">
-						<p>
-							Ya tenés la región factible. Para encontrar el óptimo formalmente,
-							tenemos que examinar uno por uno los <strong>vértices</strong> del polígono.
-						</p>
-					</SlackoTip>
 					<button class="cta-btn" onclick={showVertexTutorial}>
 						Aprender el análisis de vértices
 						<span class="arrow">→</span>
 					</button>
-				</div>
 			{:else if phase === 'tutorial-vertex'}
 				<VertexAnalysisTutorial
 					sense={get(model).sense}
@@ -273,12 +269,6 @@
 	.tutorial-collapsed-body {
 		padding: 0.65rem 0.65rem 0.85rem 0.65rem;
 		border-top: 1px solid var(--color-bot-border);
-	}
-
-	.bridge {
-		display: flex;
-		flex-direction: column;
-		gap: 0.7rem;
 	}
 
 	.cta-btn {

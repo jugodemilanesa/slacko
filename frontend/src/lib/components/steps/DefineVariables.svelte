@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
+	import { model, addMessage, advanceState, sendAssistantMessage, addTip } from '$lib/stores/chat';
 	import { get } from 'svelte/store';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 	import Latex from '$lib/components/Latex.svelte';
 	import { objectiveLatex } from '$lib/math/formula';
 
@@ -51,6 +50,11 @@
 			{ delay: 750, expression: 'happy' }
 		);
 	}
+
+	$effect(() => {
+		addTip('concept', 'Una variable de decisión representa una cantidad desconocida que el problema nos pide determinar — típicamente cuánto fabricar, cuánto usar, o cuánto asignar.', '¿Qué es una variable de decisión?');
+		addTip('tip', 'Usá punto como separador decimal (ej: 0.25, no 0,25). Si el coeficiente es entero, no hace falta .0.', 'Sobre los decimales');
+	});
 </script>
 
 <div class="step-enter space-y-3">
@@ -140,21 +144,7 @@
 		Confirmar variables
 	</button>
 
-	<SlackoTip kind="concept" title="¿Qué es una variable de decisión?">
-		<p>
-			Una <strong>variable de decisión</strong> representa una cantidad desconocida
-			que el problema nos pide determinar — típicamente cuánto fabricar, cuánto
-			usar, o cuánto asignar de cada cosa.
-		</p>
-	</SlackoTip>
 
-	<SlackoTip kind="tip" title="Sobre los decimales">
-		<p>
-			Usá <strong>punto</strong> como separador decimal (por ejemplo
-			<code>0.25</code>, no <code>0,25</code>). Si el coeficiente es exacto y entero
-			(como <code>2</code>), no hace falta escribir <code>.0</code>.
-		</p>
-	</SlackoTip>
 </div>
 
 <style>

@@ -4,10 +4,10 @@
 		addMessage,
 		advanceState,
 		goToState,
-		sendAssistantMessage
+		sendAssistantMessage,
+		addTip
 	} from '$lib/stores/chat';
 	import Latex from '$lib/components/Latex.svelte';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 	import {
 		objectiveLatex,
 		constraintLatex,
@@ -31,6 +31,10 @@
 			{ delay: 500, expression: 'idle' }
 		);
 	}
+
+	$effect(() => {
+		addTip('warning', 'Antes de confirmar, chequeá: ¿los coeficientes coinciden con el enunciado? ¿cada restricción tiene el signo correcto? ¿no falta ninguna restricción implícita?', 'Antes de confirmar, chequeá esto');
+	});
 </script>
 
 <div class="step-enter">
@@ -97,14 +101,6 @@
 			</div>
 		</section>
 	</article>
-
-	<SlackoTip kind="warning" title="Antes de confirmar, chequeá esto">
-		<ul>
-			<li>¿Los <strong>coeficientes</strong> coinciden con los datos del enunciado?</li>
-			<li>¿Cada restricción tiene el <strong>signo correcto</strong>? (recurso = <code>≤</code>, mínimo = <code>≥</code>)</li>
-			<li>¿No falta ninguna restricción implícita? (a veces el enunciado dice "al menos…" o "como mucho…" sin ser obvio)</li>
-		</ul>
-	</SlackoTip>
 
 	<div class="actions">
 		<button onclick={edit} class="btn-secondary">
