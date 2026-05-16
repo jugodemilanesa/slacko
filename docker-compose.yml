@@ -34,6 +34,10 @@ services:
 
   frontend:
     build: ./frontend
+    command: >
+      sh -c "npm install --no-audit --no-fund &&
+             rm -rf node_modules/.vite &&
+             npm run dev -- --host 0.0.0.0"
     ports:
       - "5173:5173"
     volumes:

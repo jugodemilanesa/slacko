@@ -14,6 +14,10 @@
 	function selectTheory() {
 		goToState('THEORY_QUERY');
 	}
+
+	function selectTutorial() {
+		goToState('TUTORIAL');
+	}
 </script>
 
 <div class="step-enter space-y-3">
@@ -55,18 +59,22 @@
 	</button>
 
 	<button
-		disabled
-		class="w-full p-5 rounded-xl border-2 border-ink/5 bg-surface-warm text-left opacity-50 cursor-not-allowed"
+		onclick={selectTutorial}
+		class="w-full p-5 rounded-xl border-2 border-ink/15 bg-white hover:border-ink hover:shadow-md
+			transition-all text-left group cursor-pointer"
 	>
 		<div class="flex items-center gap-3">
 			<div
-				class="w-10 h-10 rounded-lg bg-ink/5 flex items-center justify-center text-ink-muted text-lg"
+				class="w-10 h-10 rounded-lg bg-ink/8 flex items-center justify-center text-ink text-lg
+					group-hover:bg-ink group-hover:text-white transition-colors font-display"
 			>
-				⚡
+				✦
 			</div>
 			<div>
-				<div class="font-semibold text-ink-light">Revisar mi modelo</div>
-				<div class="text-sm text-ink-muted">Próximamente</div>
+				<div class="font-semibold text-ink">Tutorial</div>
+				<div class="text-sm text-ink-muted">
+					Recorré un ejemplo ya resuelto conmigo, paso a paso
+				</div>
 			</div>
 		</div>
 	</button>

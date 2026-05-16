@@ -30,11 +30,14 @@
 	import SolveAndGraph from '$lib/components/steps/SolveAndGraph.svelte';
 	import Interpret from '$lib/components/steps/Interpret.svelte';
 	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
+	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(true);
 
 	const inTheoryMode = $derived($currentState === 'THEORY_QUERY');
+	const inTutorialMode = $derived($currentState === 'TUTORIAL');
+	const inFullMode = $derived(inTheoryMode || inTutorialMode);
 
 	onMount(() => {
 		if (!isAuthenticated()) {
@@ -78,7 +81,7 @@
 
 <div class="flex h-screen overflow-hidden bg-surface">
 	<!-- Sidebar (only for guided flow) -->
-	{#if !inTheoryMode}
+	{#if !inFullMode}
 		<ModelSidebar open={sidebarOpen} />
 	{/if}
 
@@ -88,7 +91,7 @@
 		<header
 			class="bg-surface-card border-b border-bot-border px-6 py-3 flex items-center gap-4 shrink-0"
 		>
-			{#if !inTheoryMode}
+			{#if !inFullMode}
 				<button
 					onclick={() => (sidebarOpen = !sidebarOpen)}
 					class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
@@ -109,13 +112,20 @@
 						>
 							Modo teoría
 						</span>
+					{:else if inTutorialMode}
+						<span
+							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-ink
+								bg-ink/8 px-2 py-0.5 rounded-full border border-ink/30"
+						>
+							Tutorial
+						</span>
 					{:else if $isGuidedFlow}
 						<span class="text-xs text-ink-muted bg-surface-warm px-2 py-0.5 rounded-full">
 							Paso {$currentStepIndex + 1} de {STEP_ORDER.length} — {STEP_LABELS[$currentState]}
 						</span>
 					{/if}
 				</div>
-				{#if !inTheoryMode}
+				{#if !inFullMode}
 					<div class="mt-1.5 max-w-md">
 						<ProgressBar />
 					</div>
@@ -145,6 +155,12 @@
 			<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
 				{#key $currentState}
 					<TheoryMode />
+				{/key}
+			</div>
+		{:else if inTutorialMode}
+			<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+				{#key $currentState}
+					<TutorialMode />
 				{/key}
 			</div>
 		{:else}

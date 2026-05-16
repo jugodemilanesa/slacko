@@ -10,7 +10,8 @@ export type ChatState =
 	| 'CONVERT_FORMS'
 	| 'SOLVE_AND_GRAPH'
 	| 'INTERPRET'
-	| 'THEORY_QUERY';
+	| 'THEORY_QUERY'
+	| 'TUTORIAL';
 
 export interface Variable {
 	name: string;
@@ -87,7 +88,8 @@ const STEP_LABELS: Record<ChatState, string> = {
 	CONVERT_FORMS: 'Forma estándar',
 	SOLVE_AND_GRAPH: 'Resolución',
 	INTERPRET: 'Interpretación',
-	THEORY_QUERY: 'Consulta teórica'
+	THEORY_QUERY: 'Consulta teórica',
+	TUTORIAL: 'Tutorial'
 };
 
 export { STEP_ORDER, STEP_LABELS };
