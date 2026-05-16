@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# slacko
-ya tu sabe
-=======
 # Slacko - Tutor de Investigación Operativa
 
 Chatbot educativo que asiste a estudiantes de Investigación Operativa (UTN) en la formulación, resolución gráfica e interpretación de problemas de Programación Lineal.
