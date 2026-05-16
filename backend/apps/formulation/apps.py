@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class FormulationConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.formulation"
+    verbose_name = "Formulación y validación"
