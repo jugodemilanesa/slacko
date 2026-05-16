@@ -80,4 +80,3 @@ docker compose down -v
 ## Equipo
 
 **SLAKING** — UTN, Investigación Operativa 2026
->>>>>>> master
