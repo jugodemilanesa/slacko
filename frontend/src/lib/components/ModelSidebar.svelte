@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { model, currentState } from '$lib/stores/chat';
+	import { model } from '$lib/stores/chat';
 
 	let { open = true }: { open?: boolean } = $props();
 </script>
@@ -88,8 +88,5 @@
 			{/if}
 		</div>
 
-		<div class="p-4 border-t border-white/10 text-[0.7rem] text-white/30">
-			Paso actual: <span class="text-accent">{$currentState.replace(/_/g, ' ')}</span>
-		</div>
 	</aside>
 {/if}

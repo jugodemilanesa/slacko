@@ -4,11 +4,11 @@
 		addMessage,
 		advanceState,
 		sendAssistantMessage,
+		addTip,
 		type Constraint
 	} from '$lib/stores/chat';
 	import { get } from 'svelte/store';
 	import Latex from '$lib/components/Latex.svelte';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
 	import {
 		constraintLatex,
 		mixingToConstraint,
@@ -154,6 +154,11 @@
 				m.variables
 			)
 		};
+	});
+
+	$effect(() => {
+		addTip('concept', 'Una restricción es una limitación del problema, ligada a recursos disponibles, capacidades máximas o condiciones mínimas.', '¿Qué es una restricción?');
+		addTip('tip', 'Cuando el enunciado dice algo como "los balones deben ser al menos el 25% del total", usá la pestaña Mezcla / proporción: Slacko la convierte automáticamente.', 'Las restricciones de mezcla');
 	});
 </script>
 
@@ -358,29 +363,6 @@
 			</button>
 		{/if}
 	</div>
-
-	<SlackoTip kind="concept" title="¿Qué es una restricción?">
-		<p>
-			Una <strong>restricción</strong> es una limitación del problema, usualmente
-			ligada a recursos disponibles, capacidades máximas o condiciones mínimas que
-			tienen que cumplirse.
-		</p>
-		<ul>
-			<li>Recurso limitado: usá <code>≤</code> ("no puedo usar más de…")</li>
-			<li>Mínimo a cumplir: usá <code>≥</code> ("tengo que producir al menos…")</li>
-			<li>Igualdad estricta: usá <code>=</code> (poco común en problemas iniciales)</li>
-		</ul>
-	</SlackoTip>
-
-	<SlackoTip kind="tip" title="Las restricciones de mezcla">
-		<p>
-			Cuando el enunciado dice cosas como
-			<em>"los balones tienen que ser al menos el 25% de la producción total"</em>,
-			estás frente a una restricción de proporción. Usá la pestaña
-			<strong>Mezcla / proporción</strong>: Slacko la convierte automáticamente a la
-			forma de coeficientes para resolver.
-		</p>
-	</SlackoTip>
 
 	{#if localConstraints.length > 0}
 		<button onclick={finish} class="finish-btn">

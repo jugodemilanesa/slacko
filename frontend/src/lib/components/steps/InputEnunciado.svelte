@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
+	import { model, addMessage, advanceState, sendAssistantMessage, addTip } from '$lib/stores/chat';
+
+	$effect(() => {
+		addTip('tip', 'Antes de pegar el enunciado, verificá: ¿están claras las cantidades a decidir? ¿hay un objetivo que maximizar o minimizar? ¿aparecen recursos limitados?', 'Antes de pegarlo, fijate');
+		addTip('question', 'Datos como horas o demanda pueden venir por día, por semana o por mes. Si no aparece la unidad temporal, asumí la misma para todo el problema.', 'Si el enunciado tiene ambigüedades');
+	});
 
 	let text = $state('');
 
@@ -46,28 +50,5 @@
 		</button>
 	</div>
 
-	<SlackoTip kind="tip" title="Antes de pegarlo, fijate">
-		<ul>
-			<li>
-				¿Están claras las <strong>cantidades a decidir</strong>?
-				(ej.: "cuántos balones y cuántos juegos de ajedrez fabricar")
-			</li>
-			<li>
-				¿Hay un objetivo expresado como <em>maximizar</em> o <em>minimizar</em>?
-				(utilidad, costo, tiempo, etc.)
-			</li>
-			<li>
-				¿Aparecen <strong>recursos limitados</strong> u <strong>obligaciones mínimas</strong>?
-				(horas-máquina, materia prima, mínimos de producción)
-			</li>
-		</ul>
-	</SlackoTip>
 
-	<SlackoTip kind="question" title="Si el enunciado tiene ambigüedades">
-		<p>
-			Datos como horas o demanda pueden venir <em>por día</em>, <em>por semana</em>
-			o <em>por mes</em>. Si no aparece la unidad temporal, asumí la misma para todo
-			el problema y dejalo en claro acá.
-		</p>
-	</SlackoTip>
 </div>

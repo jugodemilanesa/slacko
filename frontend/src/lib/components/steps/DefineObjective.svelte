@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
-	import SlackoTip from '$lib/components/SlackoTip.svelte';
+	import { model, addMessage, advanceState, sendAssistantMessage, addTip } from '$lib/stores/chat';
+
+	$effect(() => {
+		addTip('tip', 'Pensá qué palabra clave aparece en el enunciado: maximizar, ganancia, aprovechar → Max. Minimizar, costo, tiempo → Min.', '¿Cómo decidir?');
+		addTip('concept', 'El sentido (Max/Min) cambia cómo se mueve la recta de isoutilidad sobre la región factible. Es la primera decisión del método gráfico.', '¿Por qué importa esto antes?');
+	});
 
 	async function select(sense: 'maximize' | 'minimize') {
 		model.update((m) => ({ ...m, sense }));
@@ -36,29 +40,5 @@
 		</button>
 	</div>
 
-	<SlackoTip kind="tip" title="¿Cómo decidir?">
-		<ul>
-			<li>
-				Pensá qué <strong>palabra clave</strong> aparece en el enunciado:
-				<em>maximizar</em>, <em>obtener la mayor ganancia</em>, <em>aprovechar al máximo</em>
-				son señales de <strong>Max</strong>.
-			</li>
-			<li>
-				<em>Minimizar costo</em>, <em>reducir el tiempo</em>, <em>al menor desperdicio</em>
-				son señales de <strong>Min</strong>.
-			</li>
-			<li>
-				En la duda: <strong>ganancia / utilidad / producción → Max</strong>;
-				<strong>costo / tiempo / pérdida → Min</strong>.
-			</li>
-		</ul>
-	</SlackoTip>
 
-	<SlackoTip kind="concept" title="¿Por qué importa esto antes?">
-		<p>
-			El sentido (Max/Min) cambia cómo se mueve la <em>recta de isoutilidad</em>
-			sobre la región factible. En Max la alejás del origen; en Min, la acercás. Es
-			la primera decisión del método gráfico.
-		</p>
-	</SlackoTip>
 </div>
