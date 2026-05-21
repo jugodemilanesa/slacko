@@ -79,8 +79,19 @@ def complete(
     # Lazy import — keeps non-LLM workflows snappy.
     import litellm
 
+    # Importamos lazily para evitar circular import.
+    from . import usage
+
     last_error: Exception | None = None
     for provider in providers:
+        # Skip providers que estén cerca de su cuota — preempt antes del 429.
+        if usage.is_near_cap(provider):
+            logger.info(
+                "LLM provider %s skipped (near quota cap); trying next.",
+                provider["name"],
+            )
+            continue
+
         try:
             kwargs: dict[str, Any] = {
                 "model": provider["model"],
@@ -92,6 +103,10 @@ def complete(
                     else getattr(settings, "LLM_TEMPERATURE", 0.3)
                 ),
             }
+            # OpenAI-compatible providers con base custom (Z.ai, etc.) necesitan
+            # api_base. LiteLLM lo passthroughea sin tocar el shape de la request.
+            if provider.get("api_base"):
+                kwargs["api_base"] = provider["api_base"]
             if tools:
                 kwargs["tools"] = tools
                 kwargs["tool_choice"] = tool_choice

@@ -13,7 +13,10 @@ import uuid
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from . import security, throttle
+
 logger = logging.getLogger(__name__)
+security_logger = logging.getLogger("apps.chat.security")
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -39,6 +42,77 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, content: dict):
         user_text = (content.get("message") or "").strip()
         if not user_text:
+            return
+
+        user = self.scope.get("user")
+        user_id = getattr(user, "id", None)
+
+        # ── Rate limit (per-user first, then global per-process) ──
+        if user_id is not None:
+            user_decision = throttle.check_user(user_id)
+            if not user_decision.allowed:
+                wait_s = int((user_decision.retry_after_seconds or 0) + 1)
+                security_logger.info(
+                    "rate_limit_hit scope=%s user=%s session=%s wait=%ss",
+                    user_decision.scope,
+                    user_id,
+                    self.session.id,
+                    wait_s,
+                )
+                await self.send_json(
+                    {
+                        "type": "error",
+                        "message": (
+                            f"Estás yendo muy rápido. Esperá ~{wait_s} segundos "
+                            "antes de mandar otro mensaje."
+                        ),
+                        "details": f"rate_limited:{user_decision.scope}",
+                    }
+                )
+                return
+
+        global_decision = throttle.check_global()
+        if not global_decision.allowed:
+            wait_s = int((global_decision.retry_after_seconds or 0) + 1)
+            security_logger.warning(
+                "rate_limit_hit scope=global user=%s session=%s wait=%ss",
+                user_id,
+                self.session.id,
+                wait_s,
+            )
+            await self.send_json(
+                {
+                    "type": "error",
+                    "message": (
+                        "Hay muchos alumnos consultando a Slacko en este momento. "
+                        f"Esperá ~{wait_s} segundos y probá de nuevo."
+                    ),
+                    "details": "rate_limited:global_min",
+                }
+            )
+            return
+
+        # ── Prompt injection pre-filter ──
+        verdict = security.evaluate(user_text)
+        if verdict.blocked:
+            security_logger.warning(
+                "injection_blocked pattern=%s user=%s session=%s excerpt=%r",
+                verdict.pattern,
+                user_id,
+                self.session.id,
+                verdict.excerpt,
+            )
+            await self.send_json(
+                {
+                    "type": "error",
+                    "message": (
+                        "Detecté un intento de cambiar mis reglas o de revelar mi "
+                        "configuración interna. Mantengamos la conversación sobre "
+                        "Programación Lineal — ¿en qué te puedo ayudar?"
+                    ),
+                    "details": f"injection_blocked:{verdict.pattern}",
+                }
+            )
             return
 
         await self._save_message(self.session.id, "user", user_text, {})
