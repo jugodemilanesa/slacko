@@ -15,7 +15,8 @@ cd inv-op
 
 # 2. Configurar variables de entorno
 cp backend/.env.example backend/.env
-# Editar backend/.env si se necesita (API keys, etc.)
+# Opcional: cargar al menos una API key de LLM (ver "LLM providers" más abajo).
+# Sin keys, el chat funciona en modo determinístico (solo wiki).
 
 # 3. Levantar los servicios
 docker compose up -d
@@ -23,6 +24,18 @@ docker compose up -d
 # 4. Verificar que todo esté corriendo
 docker compose ps
 ```
+
+### LLM providers
+
+El orquestador es provider-agnostic (LiteLLM). Pone una o más keys en `backend/.env`; usa la primera disponible con fallback al resto:
+
+| Proveedor | Free tier | Dónde sacar la key |
+|---|---|---|
+| **Gemini** (recomendado) | 1.500 RPD en `gemini-2.5-flash`, sin tarjeta | https://aistudio.google.com/apikey |
+| Groq | Generoso, sin tarjeta | https://console.groq.com |
+| OpenRouter | Modelos `:free` (Llama 3.3), más lento | https://openrouter.ai/keys |
+
+Si las tres quedan vacías, el chat sigue funcionando pero responde solo con el matcher determinístico del wiki (`data/wiki/concepts/*.md`). Útil para dev sin keys.
 
 Los servicios disponibles:
 
@@ -65,10 +78,12 @@ docker compose down -v
 
 ## Stack
 
-- **Backend:** Python 3.12 / Django / DRF / Django Channels
+- **Backend:** Python 3.12 / Django 5.1 / DRF / Django Channels
 - **Frontend:** SvelteKit / Tailwind CSS / Plotly.js
 - **Base de datos:** PostgreSQL 16 + pgvector
-- **LLM:** LiteLLM → OpenRouter
+- **LLM:** LiteLLM, multi-provider con fallback chain (Gemini → Groq → OpenRouter); degrada a determinístico sin keys
+- **Auth:** JWT (SimpleJWT) + dj-rest-auth + django-allauth (Google OAuth)
+- **Tutor teórico:** Wiki estilo Karpathy en `data/wiki/` (32 conceptos curados)
 
 ## Documentación
 
