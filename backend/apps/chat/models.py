@@ -24,7 +24,7 @@ class Session(models.Model):
     )
     mode = models.CharField(
         max_length=10,
-        choices=[("guided", "Guiado"), ("free", "Libre")],
+        choices=[("guided", "Guiado"), ("free", "Libre"), ("llm", "LLM")],
         blank=True,
     )
     state = models.CharField(max_length=30, default="START")
@@ -44,8 +44,8 @@ class Session(models.Model):
         verbose_name_plural = "Sesiones de chat"
         ordering = ["-pinned", "-updated_at"]
         indexes = [
-            models.Index(fields=["user", "archived"]),
-            models.Index(fields=["user", "-updated_at"]),
+            models.Index(fields=["user", "archived"], name="idx_chat_sess_user_arch"),
+            models.Index(fields=["user", "-updated_at"], name="idx_chat_sess_user_upd"),
         ]
 
     def __str__(self) -> str:
@@ -80,7 +80,7 @@ class Message(models.Model):
         verbose_name_plural = "Mensajes"
         ordering = ["created_at"]
         indexes = [
-            models.Index(fields=["session", "created_at"]),
+            models.Index(fields=["session", "created_at"], name="idx_chat_msg_sess_created"),
         ]
 
     def __str__(self) -> str:

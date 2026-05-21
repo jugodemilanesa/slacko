@@ -11,7 +11,8 @@ export type ChatState =
 	| 'SOLVE_AND_GRAPH'
 	| 'INTERPRET'
 	| 'THEORY_QUERY'
-	| 'TUTORIAL';
+	| 'TUTORIAL'
+	| 'LLM_CHAT';
 
 export interface Variable {
 	name: string;
@@ -97,7 +98,8 @@ const STEP_LABELS: Record<ChatState, string> = {
 	SOLVE_AND_GRAPH: 'Resolución',
 	INTERPRET: 'Interpretación',
 	THEORY_QUERY: 'Consulta teórica',
-	TUTORIAL: 'Tutorial'
+	TUTORIAL: 'Tutorial',
+	LLM_CHAT: 'Chat con Slacko'
 };
 
 export { STEP_ORDER, STEP_LABELS };
