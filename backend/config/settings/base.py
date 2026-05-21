@@ -28,13 +28,21 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
 ]
 
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "channels",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
 ]
 
 LOCAL_APPS = [
@@ -59,7 +67,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # allauth >=0.56 requires this middleware. It must come AFTER auth.
+    "allauth.account.middleware.AccountMiddleware",
 ]
+
+SITE_ID = 1
 
 ROOT_URLCONF = "config.urls"
 
@@ -130,6 +142,44 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# --- dj-rest-auth + allauth ---
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+# allauth ≥0.55 settings (new-style, headless-friendly).
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+
+REST_AUTH = {
+    "USE_JWT": True,
+    "JWT_AUTH_HTTPONLY": False,  # frontend reads the JWT from the JSON body
+    "SESSION_LOGIN": False,
+    "REGISTER_SERIALIZER": "apps.accounts.serializers.RegisterSerializer",
+    "USER_DETAILS_SERIALIZER": "apps.accounts.serializers.UserSerializer",
+}
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_OAUTH_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_OAUTH_CLIENT_SECRET", default=""),
+            "key": "",
+        },
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "OAUTH_PKCE_ENABLED": True,
+    },
+}
+
+# Frontend URL used in password-reset emails and OAuth callbacks.
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:5173")
+
 # --- CORS ---
 
 CORS_ALLOWED_ORIGINS = env.list(
@@ -145,11 +195,40 @@ CHANNEL_LAYERS = {
     },
 }
 
-# --- LLM ---
+# --- LLM (provider-agnostic via LiteLLM Router) ---
 
-LLM_MODEL = env("LLM_MODEL", default="openrouter/anthropic/claude-sonnet-4-20250514")
-OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", default="")
+# Three providers configured as a fallback chain. Any of them can be empty;
+# the Router skips entries without a key. If ALL are empty, the orchestrator
+# operates in "deterministic-only" mode (no LLM hops).
+LLM_PROVIDERS = [
+    {
+        "name": "gemini",
+        "model": env("GEMINI_MODEL", default="gemini/gemini-2.5-flash"),
+        "api_key": env("GEMINI_API_KEY", default=""),
+        "rpm": 15,  # free-tier rough limit
+    },
+    {
+        "name": "groq",
+        "model": env("GROQ_MODEL", default="groq/llama-3.3-70b-versatile"),
+        "api_key": env("GROQ_API_KEY", default=""),
+        "rpm": 30,
+    },
+    {
+        "name": "openrouter",
+        "model": env(
+            "OPENROUTER_MODEL",
+            default="openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        ),
+        "api_key": env("OPENROUTER_API_KEY", default=""),
+        "rpm": 20,
+    },
+]
 
-# --- RAG ---
+# Number of hops (tool-call cycles) the orchestrator will run per user turn.
+LLM_MAX_HOPS = env.int("LLM_MAX_HOPS", default=5)
+LLM_TEMPERATURE = env.float("LLM_TEMPERATURE", default=0.3)
 
+# --- Wiki / RAG ---
+
+WIKI_DIR = env("WIKI_DIR", default=str(BASE_DIR.parent / "data" / "wiki"))
 BIBLIOGRAPHY_DIR = BASE_DIR.parent / "data" / "bibliography"
