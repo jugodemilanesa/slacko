@@ -18,7 +18,7 @@ el mismo criterio.
 | Backend | Django 5 + DRF + Channels | apps en `backend/apps/<nombre>/` |
 | Frontend | SvelteKit 2 + Svelte 5 (runes) | TS estricto, Tailwind 4 |
 | DB | PostgreSQL + pgvector | la extensión se crea en una migración con `RunSQL` idempotente |
-| LLM | LiteLLM → OpenRouter (pendiente) | aún no integrado |
+| LLM | LiteLLM, multi-provider con fallback (Gemini → Groq → OpenRouter) | settings.LLM_PROVIDERS; degrada a determinístico si no hay keys |
 | Cálculo | NumPy / SciPy / PuLP | en `apps/solver/engine.py` |
 | Plot | Plotly.js client-side | el backend devuelve JSON; nada de imágenes |
 | Auth | JWT (`djangorestframework-simplejwt`) | tokens en `localStorage`, refresh manual |
@@ -262,8 +262,11 @@ Sistema de design ya en `app.css` con `@theme` (Tailwind 4):
 
 ### 6.2 `apps/theory/`
 
-- **Knowledge base** en `knowledge_base.py`: `Concept` y `Category` como
-  `@dataclass(frozen=True)`, listas tipadas exportadas (`CONCEPTS`, `CATEGORIES`).
+- **Wiki como fuente de verdad** en `data/wiki/concepts/*.md` (YAML frontmatter
+  + markdown). Schema en `data/wiki/SLACKO.md`. El loader (`wiki_loader.py`)
+  parsea todo al iniciar Django y expone `Concept`/`Category` como
+  `@dataclass(frozen=True)`. `knowledge_base.py` quedó como un re-export para
+  no romper callers (matcher, views, tests).
 - **Matcher** en `matcher.py`: pipeline determinístico
   `normalize → tokenize → score → MatchResult`. Los pesos
   (`_FULL_PHRASE_BONUS`, `_PHRASE_LENGTH_WEIGHT`, etc.) se ajustan con tests
@@ -275,18 +278,32 @@ Sistema de design ya en `app.css` con `@theme` (Tailwind 4):
   - `POST /api/theory/query/ {question}` — match determinístico.
 - Cada concepto tiene: `id` (slug), `title`, `category`, `aliases` (tuple), `summary`, `content` (markdown), `related` (tuple de ids).
 
-### 6.3 `apps/orchestrator/` (pendiente)
+### 6.3 `apps/orchestrator/`
 
-- Pendiente de implementar. Contrato esperado: recibe mensaje + estado actual,
-  decide pipeline (LLM | solver | RAG | template), devuelve respuesta + nuevo
-  estado.
+- `llm.py`: cliente provider-agnostic via LiteLLM, fallback chain según
+  `settings.LLM_PROVIDERS`. `is_configured()` detecta ausencia de keys; el
+  caller (`orchestrator.py`) cae a modo determinístico en ese caso.
+- `tools.py`: contrato de tools (OpenAI function-calling shape) + dispatcher
+  hacia módulos determinísticos. Agregar una capacidad nueva = appendear
+  a `TOOLS` + handler en `_HANDLERS`.
+- `orchestrator.py`: loop multi-hop (`LLM_MAX_HOPS`, default 5). Carga
+  historial desde `apps.chat.models.Message`, llama LLM con tools, despacha
+  resultados, repite hasta texto final.
+- `TurnResult` es el contrato de salida: `content`, `tool_calls`, `citations`,
+  `provider`, `error`. El ChatConsumer lo serializa al WS y persiste en
+  `Message.tool_calls` / `Message.citations` / `Message.metadata`.
 
-### 6.4 `apps/formulation/` (pendiente)
+### 6.4 `apps/formulation/`
 
-- Pendiente. Va a usar el "Diccionario de Patrones NLP" que está en
-  `docs/TPI - Slaking - Preguntas teoricas.md` (sección final). Esos ejemplos
-  resueltos (Ej. 4 y Ej. 2) son parte de **modo libre / extracción**, no del
-  tutor teórico.
+- `extractor.py`: prompt LLM dedicado para `texto → LPModel JSON`. Schema
+  igual al de `apps/solver/engine.py`. Se invoca desde la tool
+  `parse_problem` del orquestador.
+- `validator.py`: chequeos sobre el LPModel (2 vars, signos válidos,
+  linealidad, etc.). Códigos de error tipados que mapean a la tool
+  `explain_error`.
+- El "Diccionario de Patrones NLP" en `docs/TPI - Slaking - Preguntas
+  teoricas.md` sigue siendo la referencia para enriquecer el prompt del
+  extractor con ejemplos.
 
 ---
 
@@ -319,5 +336,6 @@ de la última actualización:
 
 ---
 
-*Última actualización: 2026-04-30 — sesión de implementación del modo "Consulta
-teórica" determinístico.*
+*Última actualización: 2026-05-21 — integración LLM provider-agnostic
+(LiteLLM + Gemini/Groq/OpenRouter), orquestador con tools, wiki estilo
+Karpathy, dj-rest-auth + Google OAuth.*
