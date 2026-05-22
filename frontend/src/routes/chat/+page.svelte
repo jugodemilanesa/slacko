@@ -32,13 +32,15 @@
 	import Interpret from '$lib/components/steps/Interpret.svelte';
 	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
 	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
+	import LLMChatMode from '$lib/components/steps/LLMChatMode.svelte';
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(true);
 
 	const inTheoryMode = $derived($currentState === 'THEORY_QUERY');
 	const inTutorialMode = $derived($currentState === 'TUTORIAL');
-	const inFullMode = $derived(inTheoryMode || inTutorialMode);
+	const inLLMChatMode = $derived($currentState === 'LLM_CHAT');
+	const inFullMode = $derived(inTheoryMode || inTutorialMode || inLLMChatMode);
 
 	onMount(() => {
 		if (!isAuthenticated()) {
@@ -119,6 +121,12 @@
 						>
 							Tutorial
 						</span>
+					{:else if inLLMChatMode}
+						<span
+							class="llm-chip-badge text-[0.65rem] tracking-[0.18em] uppercase font-mono px-2 py-0.5 rounded-full"
+						>
+							Chat con IA
+						</span>
 					{:else if $isGuidedFlow}
 						<span class="text-xs text-ink-muted bg-surface-warm px-2 py-0.5 rounded-full">
 							Paso {$currentStepIndex + 1} de {STEP_ORDER.length} — {STEP_LABELS[$currentState]}
@@ -162,6 +170,12 @@
 				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
 					{#key $currentState}
 						<TutorialMode />
+					{/key}
+				</div>
+			{:else if inLLMChatMode}
+				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+					{#key $currentState}
+						<LLMChatMode />
 					{/key}
 				</div>
 			{:else}
@@ -214,3 +228,29 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.llm-chip-badge {
+		position: relative;
+		background: var(--color-surface-card);
+		color: var(--color-ink);
+		border: 1px solid transparent;
+	}
+	.llm-chip-badge::before {
+		content: '';
+		position: absolute;
+		inset: -1px;
+		border-radius: 9999px;
+		padding: 1px;
+		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		-webkit-mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+	}
+</style>

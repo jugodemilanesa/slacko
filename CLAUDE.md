@@ -12,11 +12,11 @@ Asiste en la formulación, resolución gráfica e interpretación de problemas d
 | Backend | Python 3.12+ · Django · Django REST Framework · Django Channels |
 | Frontend | SvelteKit (consume API REST + WebSocket de Django) |
 | Base de datos | PostgreSQL + pgvector |
-| LLM | LiteLLM → OpenRouter (agnóstico al proveedor) |
+| LLM | LiteLLM, multi-provider con fallback chain (Gemini → Groq → OpenRouter); degrada a modo determinístico si no hay keys |
 | Cálculo | NumPy · SciPy · PuLP |
 | Graficación | Plotly.js (client-side, interactivo) |
-| Autenticación | JWT (djangorestframework-simplejwt) |
-| RAG | pgvector para embeddings, ingesta via management command |
+| Autenticación | JWT (djangorestframework-simplejwt) + dj-rest-auth + django-allauth (Google OAuth) |
+| Tutor teórico | Wiki estilo Karpathy en `data/wiki/concepts/*.md` (YAML frontmatter + markdown); matcher determinístico por aliases. RAG con bibliografía PDF + embeddings pgvector pendiente. |
 
 ## Estructura del monorepo
 
@@ -26,19 +26,23 @@ inv-op/
 │   ├── manage.py
 │   ├── config/                  # settings, urls, asgi, wsgi
 │   ├── apps/
-│   │   ├── accounts/            # registro, login, JWT
-│   │   ├── chat/                # WebSocket consumers, sesiones de chat
-│   │   ├── theory/              # RAG: ingesta de PDFs, búsqueda semántica
+│   │   ├── accounts/            # registro, login, JWT, UserProfile, Google OAuth
+│   │   ├── chat/                # WebSocket consumer, JWT middleware, Session/Message + REST sidebar
+│   │   ├── theory/              # wiki_loader (data/wiki/*.md → dataclasses), matcher, endpoints
 │   │   ├── solver/              # motor LP: región factible, vértices, solución
-│   │   ├── formulation/         # extracción de variables, restricciones, validación semántica
-│   │   └── orchestrator/        # routing de intenciones, state machine del chat
-│   ├── feedback_templates/      # templates de retroalimentación por tipo de error
+│   │   ├── formulation/         # extractor LLM (texto → LPModel) + validator
+│   │   └── orchestrator/        # cliente LLM (LiteLLM, multi-provider) + tools + loop multi-hop
 │   └── scripts/
-│       └── ingest_docs.py       # ingesta de bibliografía → embeddings
+│       └── migrate_kb_to_wiki.py # one-shot: KB Python heredada → data/wiki/concepts/*.md
 ├── frontend/                    # SvelteKit app
 ├── docs/                        # sprints y documentación del TPI
 ├── data/
-│   └── bibliography/            # PDFs de la cátedra (read-only)
+│   ├── wiki/
+│   │   ├── SLACKO.md            # schema y reglas del wiki para el LLM mantenedor
+│   │   ├── concepts/*.md        # 32 conceptos curados con YAML frontmatter
+│   │   ├── index.md             # autogenerado
+│   │   └── log.md               # append-only de cambios
+│   └── bibliography/            # PDFs de la cátedra (read-only) — pendiente RAG real
 ├── docker-compose.yml
 ├── CLAUDE.md
 └── README.md
@@ -49,19 +53,39 @@ inv-op/
 ### Flujo general
 
 ```
-SvelteKit → (REST/WS) → Django → Orchestrator → { LiteLLM | Solver | RAG | Templates }
+SvelteKit → (REST/WS) → Django → Orchestrator (LLM + tools)
+                                       │
+                  ┌────────────────────┼────────────────────┐
+                  │              ┌─────┴─────┐              │
+              theory_lookup   parse_problem  solve_lp    convert_form
+              (wiki matcher)  (LLM extract) (NumPy)      (deterministic)
+                              graph_lp · start_guided_mode · explain_error
 ```
 
 ### Orquestador
 
-El orquestador recibe cada mensaje del usuario y decide el pipeline:
+`apps/orchestrator/orchestrator.py` ejecuta un loop multi-hop (`LLM_MAX_HOPS=5` por default):
 
-- **Pregunta teórica** → RAG + LLM con contexto de bibliografía
-- **Enunciado (modo libre)** → LLM extrae modelo → validación → Solver
-- **Modo guiado** → State machine paso a paso con validaciones
-- **Error de formulación** → Template de feedback
-- **Solicitud de gráfico** → Solver calcula → datos JSON → Plotly renderiza en frontend
-- **Conversión de forma** → Módulo determinista de conversión canónica/estándar
+1. Carga las últimas 20 turnas del `Session` como historial OpenAI-style.
+2. Llama al LLM con el system prompt + tool contract (`apps/orchestrator/tools.py`).
+3. Si el LLM responde con `tool_calls`, despacha cada uno y feedea el resultado de vuelta.
+4. Repite hasta que el LLM produzca texto final, o se llegue a `LLM_MAX_HOPS`.
+
+**Tools disponibles (provider-agnostic, definidas como JSON Schema):**
+
+| Tool | Cuándo | Módulo destino |
+|---|---|---|
+| `theory_lookup` | Pregunta teórica | wiki matcher (`apps/theory/matcher.py`) |
+| `parse_problem` | Enunciado en lenguaje natural | `apps/formulation/extractor.py` (LLM) |
+| `solve_lp` | Resolver modelo de 2 vars | `apps/solver/engine.py` |
+| `graph_lp` | Datos para Plotly | solve + payload para frontend |
+| `convert_form` | Forma estándar/canónica | `apps/solver/conversion.py` |
+| `start_guided_mode` | Pasar a state machine guiada | actualiza `Session.mode/state` |
+| `explain_error` | Feedback pedagógico tipado | templates inline en `tools.py` |
+
+**Fallback determinístico:** si `is_configured()` da `False` (no hay keys), el orquestador responde solo con el matcher del wiki — sin LLM hops. El frontend no necesita cambios.
+
+**LLM client (`apps/orchestrator/llm.py`):** wrapper sobre LiteLLM con fallback chain. Lista de proveedores y modelos en `settings.LLM_PROVIDERS`. Agregar uno es modificar settings + .env, no código.
 
 ### State machine (modo guiado)
 
@@ -188,17 +212,22 @@ Representación JSON que fluye por todos los módulos. Esta estructura es el con
 # Backend
 cd backend && python manage.py runserver          # servidor de desarrollo
 cd backend && python manage.py migrate             # aplicar migraciones
-cd backend && python manage.py ingest_docs         # ingestar bibliografía
+cd backend && python -m scripts.migrate_kb_to_wiki # regenerar data/wiki desde la KB Python (one-shot)
 cd backend && pytest                                # correr tests
 
 # Frontend
 cd frontend && npm run dev                         # servidor de desarrollo
 cd frontend && npm run build                       # build de producción
 
-# Docker
-docker-compose up                                  # levantar todo
-docker-compose exec backend python manage.py migrate
+# Docker (workflow habitual)
+docker compose up -d                               # levantar todo en background
+docker compose logs -f backend                     # ver logs
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py createsuperuser
+docker compose build backend && docker compose up -d backend   # tras cambios en requirements.txt
 ```
+
+**Modo degradado sin LLM:** si `backend/.env` no tiene ninguna `*_API_KEY`, el orquestador detecta la ausencia y responde con el matcher determinístico del wiki. Útil para arrancar el stack sin keys.
 
 ## Contexto del proyecto
 
