@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { model, addMessage, advanceState, sendAssistantMessage } from '$lib/stores/chat';
+	import { model, addMessage, advanceState, sendAssistantMessage, addTip } from '$lib/stores/chat';
+
+	$effect(() => {
+		addTip('tip', 'Antes de pegar el enunciado, verificá: ¿están claras las cantidades a decidir? ¿hay un objetivo que maximizar o minimizar? ¿aparecen recursos limitados?', 'Antes de pegarlo, fijate');
+		addTip('question', 'Datos como horas o demanda pueden venir por día, por semana o por mes. Si no aparece la unidad temporal, asumí la misma para todo el problema.', 'Si el enunciado tiene ambigüedades');
+	});
 
 	let text = $state('');
 
@@ -23,7 +28,7 @@
 	}
 </script>
 
-<div class="step-enter">
+<div class="step-enter space-y-3">
 	<textarea
 		bind:value={text}
 		onkeydown={handleKeydown}
@@ -33,7 +38,7 @@
 			resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
 			placeholder:text-ink-muted/50"
 	></textarea>
-	<div class="flex items-center justify-between mt-3">
+	<div class="flex items-center justify-between">
 		<span class="text-xs text-ink-muted">Ctrl+Enter para enviar</span>
 		<button
 			onclick={submit}
@@ -44,4 +49,6 @@
 			Enviar enunciado
 		</button>
 	</div>
+
+
 </div>

@@ -20,6 +20,7 @@
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 	import ModelSidebar from '$lib/components/ModelSidebar.svelte';
+	import TipsHistoryPanel from '$lib/components/TipsHistoryPanel.svelte';
 	import SelectMode from '$lib/components/steps/SelectMode.svelte';
 	import InputEnunciado from '$lib/components/steps/InputEnunciado.svelte';
 	import DefineObjective from '$lib/components/steps/DefineObjective.svelte';
@@ -30,11 +31,14 @@
 	import SolveAndGraph from '$lib/components/steps/SolveAndGraph.svelte';
 	import Interpret from '$lib/components/steps/Interpret.svelte';
 	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
+	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(true);
 
 	const inTheoryMode = $derived($currentState === 'THEORY_QUERY');
+	const inTutorialMode = $derived($currentState === 'TUTORIAL');
+	const inFullMode = $derived(inTheoryMode || inTutorialMode);
 
 	onMount(() => {
 		if (!isAuthenticated()) {
@@ -78,17 +82,16 @@
 
 <div class="flex h-screen overflow-hidden bg-surface">
 	<!-- Sidebar (only for guided flow) -->
-	{#if !inTheoryMode}
+	{#if !inFullMode}
 		<ModelSidebar open={sidebarOpen} />
 	{/if}
 
-	<!-- Main area -->
-	<div class="flex-1 flex flex-col min-w-0">
-		<!-- Header -->
+	<div class="flex flex-col flex-1 min-w-0">
+		<!-- Header (full width at top) -->
 		<header
 			class="bg-surface-card border-b border-bot-border px-6 py-3 flex items-center gap-4 shrink-0"
 		>
-			{#if !inTheoryMode}
+			{#if !inFullMode}
 				<button
 					onclick={() => (sidebarOpen = !sidebarOpen)}
 					class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
@@ -109,14 +112,21 @@
 						>
 							Modo teoría
 						</span>
+					{:else if inTutorialMode}
+						<span
+							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-ink
+								bg-ink/8 px-2 py-0.5 rounded-full border border-ink/30"
+						>
+							Tutorial
+						</span>
 					{:else if $isGuidedFlow}
 						<span class="text-xs text-ink-muted bg-surface-warm px-2 py-0.5 rounded-full">
 							Paso {$currentStepIndex + 1} de {STEP_ORDER.length} — {STEP_LABELS[$currentState]}
 						</span>
 					{/if}
 				</div>
-				{#if !inTheoryMode}
-					<div class="mt-1.5 max-w-md">
+				{#if !inFullMode}
+					<div class="mt-1.5 pb-6 max-w-md">
 						<ProgressBar />
 					</div>
 				{/if}
@@ -140,55 +150,67 @@
 			</div>
 		</header>
 
-		<!-- Body: theory mode takes the whole area, guided flow keeps the chat layout -->
-		{#if inTheoryMode}
-			<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
-				{#key $currentState}
-					<TheoryMode />
-				{/key}
-			</div>
-		{:else}
-			<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
-				<div class="max-w-3xl mx-auto px-6 py-6 space-y-4">
-					<!-- Rendered messages (con expresión por mensaje) -->
-					{#each $messages as msg (msg.id)}
-						<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} />
-					{/each}
+		<!-- Below header: theory/tutorial full-width, guided flow with tips panel al costado -->
+		<div class="flex flex-1 min-h-0">
+			{#if inTheoryMode}
+				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+					{#key $currentState}
+						<TheoryMode />
+					{/key}
+				</div>
+			{:else if inTutorialMode}
+				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+					{#key $currentState}
+						<TutorialMode />
+					{/key}
+				</div>
+			{:else}
+				<div bind:this={chatContainer} id="chat-container" class="flex-1 overflow-y-auto">
+					<div class="px-6 py-6 space-y-4">
+						<!-- Rendered messages (con expresión por mensaje) -->
+						{#each $messages as msg (msg.id)}
+							<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+						{/each}
 
-					<!-- Indicador de tipeo mientras Slacko 'piensa' -->
-					{#if $assistantThinking}
-						<TypingIndicator />
-					{/if}
+						<!-- Indicador de tipeo mientras Slacko 'piensa' -->
+						{#if $assistantThinking}
+							<TypingIndicator />
+						{/if}
 
-					<!-- Paso activo (queda al final; los pasos anteriores quedan trazados
-						 en los divisores y mensajes del scroll) -->
-					<div class="flex justify-start">
-						<div class="max-w-[85%] w-full">
-							{#key $currentState}
-								{#if $currentState === 'SELECT_MODE'}
-									<SelectMode />
-								{:else if $currentState === 'INPUT_ENUNCIADO'}
-									<InputEnunciado />
-								{:else if $currentState === 'DEFINE_OBJECTIVE'}
-									<DefineObjective />
-								{:else if $currentState === 'DEFINE_VARIABLES'}
-									<DefineVariables />
-								{:else if $currentState === 'BUILD_CONSTRAINTS'}
-									<BuildConstraints />
-								{:else if $currentState === 'VALIDATE_MODEL'}
-									<ValidateModel />
-								{:else if $currentState === 'CONVERT_FORMS'}
-									<ConvertForms />
-								{:else if $currentState === 'SOLVE_AND_GRAPH'}
-									<SolveAndGraph />
-								{:else if $currentState === 'INTERPRET'}
-									<Interpret />
-								{/if}
-							{/key}
+						<!-- Paso activo (queda al final; los pasos anteriores quedan trazados
+							 en los divisores y mensajes del scroll) -->
+						<div class="flex justify-start">
+							<div class="max-w-[85%] w-full">
+								{#key $currentState}
+									{#if $currentState === 'SELECT_MODE'}
+										<SelectMode />
+									{:else if $currentState === 'INPUT_ENUNCIADO'}
+										<InputEnunciado />
+									{:else if $currentState === 'DEFINE_OBJECTIVE'}
+										<DefineObjective />
+									{:else if $currentState === 'DEFINE_VARIABLES'}
+										<DefineVariables />
+									{:else if $currentState === 'BUILD_CONSTRAINTS'}
+										<BuildConstraints />
+									{:else if $currentState === 'VALIDATE_MODEL'}
+										<ValidateModel />
+									{:else if $currentState === 'CONVERT_FORMS'}
+										<ConvertForms />
+									{:else if $currentState === 'SOLVE_AND_GRAPH'}
+										<SolveAndGraph />
+									{:else if $currentState === 'INTERPRET'}
+										<Interpret />
+									{/if}
+								{/key}
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-		{/if}
+			{/if}
+
+			{#if !inFullMode && $currentState !== 'SELECT_MODE'}
+				<TipsHistoryPanel />
+			{/if}
+		</div>
 	</div>
 </div>

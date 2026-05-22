@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 
 export type ChatState =
 	| 'SELECT_MODE'
@@ -10,7 +10,8 @@ export type ChatState =
 	| 'CONVERT_FORMS'
 	| 'SOLVE_AND_GRAPH'
 	| 'INTERPRET'
-	| 'THEORY_QUERY';
+	| 'THEORY_QUERY'
+	| 'TUTORIAL';
 
 export interface Variable {
 	name: string;
@@ -65,6 +66,14 @@ export interface ChatMessage {
 	expression?: Expression;
 }
 
+export interface TipEntry {
+	id: string;
+	kind: 'tip' | 'concept' | 'warning' | 'question' | 'note';
+	title?: string;
+	content: string;
+	step: ChatState;
+}
+
 const STEP_ORDER: ChatState[] = [
 	'SELECT_MODE',
 	'INPUT_ENUNCIADO',
@@ -87,7 +96,8 @@ const STEP_LABELS: Record<ChatState, string> = {
 	CONVERT_FORMS: 'Forma estándar',
 	SOLVE_AND_GRAPH: 'Resolución',
 	INTERPRET: 'Interpretación',
-	THEORY_QUERY: 'Consulta teórica'
+	THEORY_QUERY: 'Consulta teórica',
+	TUTORIAL: 'Tutorial'
 };
 
 export { STEP_ORDER, STEP_LABELS };
@@ -109,6 +119,26 @@ export const model = writable<LPModel>({
 });
 export const solverResult = writable<SolverResult | null>(null);
 export const standardFormResult = writable<StandardFormResult | null>(null);
+export const tipsHistory = writable<TipEntry[]>([]);
+
+export function addTip(kind: TipEntry['kind'], content: string, title?: string) {
+	tipsHistory.update((tips) => {
+		const key = `${kind}|${title || ''}|${content.slice(0, 40)}`;
+		if (tips.some((t) => `${t.kind}|${t.title || ''}|${t.content.slice(0, 40)}` === key)) {
+			return tips;
+		}
+		return [
+			...tips,
+			{
+				id: generateId(),
+				kind,
+				title,
+				content,
+				step: get(currentState)
+			}
+		];
+	});
+}
 
 export const isGuidedFlow = derived(currentState, ($state) =>
 	STEP_ORDER.includes($state)
@@ -190,4 +220,5 @@ export function resetChat() {
 	});
 	solverResult.set(null);
 	standardFormResult.set(null);
+	tipsHistory.set([]);
 }

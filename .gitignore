@@ -43,3 +43,6 @@ pgdata/
 
 # Screenshots de testing
 *.png
+
+# Cosas de google drive
+desktop.ini

@@ -1,20 +1,22 @@
 <script lang="ts">
 	import SlakingAvatar from './SlakingAvatar.svelte';
-	import type { Expression } from '$lib/stores/chat';
+	import type { Expression, ChatState } from '$lib/stores/chat';
 
 	let {
 		role,
 		content,
-		expression = 'idle'
+		expression = 'idle',
+		step
 	}: {
 		role: 'assistant' | 'user' | 'divider';
 		content: string;
 		expression?: Expression;
+		step?: ChatState;
 	} = $props();
 </script>
 
 {#if role === 'divider'}
-	<div class="flex items-center gap-3 py-2 fade-in" aria-label="step divider">
+	<div class="flex items-center gap-3 py-2 fade-in" aria-label="step divider" data-step={step}>
 		<div class="flex-1 h-px bg-bot-border"></div>
 		<span
 			class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-ink-muted
