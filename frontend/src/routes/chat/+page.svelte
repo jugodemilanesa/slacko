@@ -9,6 +9,7 @@
 		sendAssistantMessage,
 		assistantThinking,
 		resetChat,
+		restoreGuidedState,
 		STEP_LABELS,
 		currentStepIndex,
 		STEP_ORDER,
@@ -47,8 +48,8 @@
 			goto('/login');
 			return;
 		}
-		// Initial greeting con un pequeño delay para que aparezca con vida
-		if ($messages.length === 0) {
+		const restored = restoreGuidedState();
+		if (!restored && $messages.length === 0) {
 			sendAssistantMessage(
 				'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
 				{ delay: 600, expression: 'happy' }
