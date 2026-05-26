@@ -247,9 +247,15 @@ def _handle_parse_problem(args: dict[str, Any], session) -> dict[str, Any]:
 
 
 def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
+    from apps.formulation.validator import ValidationError, validate_lp_model
     from apps.solver.engine import Constraint as EngineConstraint, solve
 
     model = args.get("model") or {}
+    try:
+        validate_lp_model(model)
+    except ValidationError as exc:
+        return {"ok": False, "error": exc.code, "message": str(exc)}
+
     try:
         constraints = [
             EngineConstraint(
@@ -306,9 +312,15 @@ def _handle_graph_lp(args: dict[str, Any], session) -> dict[str, Any]:
 
 
 def _handle_convert_form(args: dict[str, Any], session) -> dict[str, Any]:
+    from apps.formulation.validator import ValidationError, validate_lp_model
     from apps.solver.conversion import to_standard_form
 
     model = args.get("model") or {}
+    try:
+        validate_lp_model(model)
+    except ValidationError as exc:
+        return {"ok": False, "error": exc.code, "message": str(exc)}
+
     target = args.get("target", "standard")
     try:
         if target == "standard":
