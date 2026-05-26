@@ -276,10 +276,11 @@ def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
             return {
                 "ok": False,
                 "error": "INFEASIBLE",
+                "warning": result.warning,
                 "vertices": [{"x1": v.x1, "x2": v.x2} for v in result.vertices],
             }
 
-        return {
+        response: dict[str, Any] = {
             "ok": True,
             "vertices": [{"x1": v.x1, "x2": v.x2} for v in result.vertices],
             "feasible_vertices": result.vertex_analysis,
@@ -289,6 +290,11 @@ def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
             },
             "optimal_value": result.optimal_value,
         }
+        if result.status != "optimal":
+            response["ok"] = False
+            response["degenerate_case"] = result.status
+            response["warning"] = result.warning
+        return response
     except Exception as exc:  # noqa: BLE001
         logger.exception("solve_lp failed")
         return {"ok": False, "error": "SOLVE_FAILED", "details": str(exc)}

@@ -46,6 +46,8 @@ class LPResult:
     optimal_point: Vertex | None
     optimal_value: float | None
     vertex_analysis: list[dict]
+    status: str = "optimal"  # "optimal" | "infeasible" | "single_point"
+    warning: str = ""
 
 
 def axis_intersections(constraint: Constraint) -> list[Vertex]:
@@ -142,7 +144,26 @@ def solve(
             optimal_point=None,
             optimal_value=None,
             vertex_analysis=[],
+            status="infeasible",
+            warning=(
+                "La región factible está vacía: ningún punto satisface todas las "
+                "restricciones simultáneamente. Revisá si las restricciones son "
+                "compatibles entre sí (por ejemplo, una demanda mínima que supera "
+                "la disponibilidad total)."
+            ),
         )
+
+    if len(feasible) == 1:
+        p = feasible[0]
+        single_point_warning = (
+            f"La región factible colapsó a un único punto ({p.x1:.4g}, {p.x2:.4g}). "
+            "Esto ocurre cuando las restricciones, combinadas con la no negatividad, "
+            "fuerzan todas las variables a un único valor (por ejemplo, RHS ≤ 0 con "
+            "desigualdad ≤ y x ≥ 0). Revisá los valores del lado derecho de las "
+            "restricciones y verificá que el enunciado no tenga datos contradictorios."
+        )
+    else:
+        single_point_warning = ""
 
     analysis = []
     for v in feasible:
@@ -162,4 +183,6 @@ def solve(
         optimal_point=optimal_point,
         optimal_value=best["z"],
         vertex_analysis=analysis,
+        status="single_point" if single_point_warning else "optimal",
+        warning=single_point_warning,
     )
