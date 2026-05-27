@@ -40,6 +40,8 @@ export interface SolverResult {
 	optimal_point: number[] | null;
 	optimal_value: number | null;
 	vertex_analysis: Array<{ x1: number; x2: number; z: number }>;
+	status?: 'optimal' | 'infeasible' | 'single_point';
+	warning?: string;
 }
 
 export interface StandardFormResult {
