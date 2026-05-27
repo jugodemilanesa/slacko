@@ -33,9 +33,13 @@
 		const Plotly = await import('plotly.js-dist-min');
 		const traces: any[] = [];
 
-		const allPoints = [...result.vertices, ...result.feasible_vertices];
-		const maxX = Math.max(...allPoints.map((p) => p[0]), 1) * 1.3;
-		const maxY = Math.max(...allPoints.map((p) => p[1]), 1) * 1.3;
+		// Only include non-negative points for bounds — negative intersections
+		// are outside the first quadrant and must not pull the axis range down.
+		const visiblePoints = [...result.vertices, ...result.feasible_vertices].filter(
+			(p) => p[0] >= 0 && p[1] >= 0
+		);
+		const maxX = Math.max(...visiblePoints.map((p) => p[0]), 1) * 1.3;
+		const maxY = Math.max(...visiblePoints.map((p) => p[1]), 1) * 1.3;
 
 		const colors = ['#6275d8', '#d4a853', '#2d9c6f', '#d44848', '#8b5cf6', '#0ea5e9'];
 		model.constraints.forEach((c, i) => {
@@ -120,6 +124,7 @@
 			xaxis: {
 				title: { text: model.variables[0].name + ' (' + model.variables[0].label + ')' },
 				range: [0, maxX],
+				autorange: false,
 				zeroline: true,
 				zerolinewidth: 2,
 				zerolinecolor: '#1a1a2e',
@@ -129,6 +134,7 @@
 			yaxis: {
 				title: { text: model.variables[1].name + ' (' + model.variables[1].label + ')' },
 				range: [0, maxY],
+				autorange: false,
 				zeroline: true,
 				zerolinewidth: 2,
 				zerolinecolor: '#1a1a2e',

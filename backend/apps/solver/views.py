@@ -36,6 +36,8 @@ class SolveView(APIView):
                 "optimal_point": result.optimal_point.as_tuple() if result.optimal_point else None,
                 "optimal_value": result.optimal_value,
                 "vertex_analysis": result.vertex_analysis,
+                "status": result.status,
+                "warning": result.warning,
             },
             status=status.HTTP_200_OK,
         )

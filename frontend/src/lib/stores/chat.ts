@@ -1,4 +1,4 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived, get, type Readable } from 'svelte/store';
 
 export type ChatState =
 	| 'SELECT_MODE'
@@ -40,6 +40,8 @@ export interface SolverResult {
 	optimal_point: number[] | null;
 	optimal_value: number | null;
 	vertex_analysis: Array<{ x1: number; x2: number; z: number }>;
+	status?: 'optimal' | 'infeasible' | 'single_point';
+	warning?: string;
 }
 
 export interface StandardFormResult {
@@ -209,6 +211,9 @@ export function goToState(state: ChatState) {
 }
 
 export function resetChat() {
+	if (typeof window !== 'undefined') {
+		window.sessionStorage.removeItem(GUIDED_SESSION_KEY);
+	}
 	currentState.set('SELECT_MODE');
 	messages.set([]);
 	model.set({
@@ -223,4 +228,69 @@ export function resetChat() {
 	solverResult.set(null);
 	standardFormResult.set(null);
 	tipsHistory.set([]);
+}
+
+// ─── Persistencia en sessionStorage ──────────────────────────────────────────
+
+const GUIDED_SESSION_KEY = 'slacko.guidedSession';
+
+interface PersistedGuidedState {
+	currentState: ChatState;
+	messages: ChatMessage[];
+	model: LPModel;
+	solverResult: SolverResult | null;
+	standardFormResult: StandardFormResult | null;
+	tipsHistory: TipEntry[];
+}
+
+export function restoreGuidedState(): boolean {
+	if (typeof window === 'undefined') return false;
+	const raw = window.sessionStorage.getItem(GUIDED_SESSION_KEY);
+	if (!raw) return false;
+	try {
+		const saved: PersistedGuidedState = JSON.parse(raw);
+		currentState.set(saved.currentState);
+		messages.set(saved.messages);
+		model.set(saved.model);
+		solverResult.set(saved.solverResult);
+		standardFormResult.set(saved.standardFormResult);
+		tipsHistory.set(saved.tipsHistory);
+		return true;
+	} catch {
+		window.sessionStorage.removeItem(GUIDED_SESSION_KEY);
+		return false;
+	}
+}
+
+// Auto-save reactivo: persiste cada vez que cambia cualquier store del flujo guiado.
+// No guarda el estado inicial vacío (SELECT_MODE sin mensajes) para no sobreescribir
+// una sesión restaurada con el valor de reset.
+const _allGuidedState = derived(
+	[currentState, messages, model, solverResult, standardFormResult, tipsHistory] as [
+		Readable<ChatState>,
+		Readable<ChatMessage[]>,
+		Readable<LPModel>,
+		Readable<SolverResult | null>,
+		Readable<StandardFormResult | null>,
+		Readable<TipEntry[]>
+	],
+	([$state, $messages, $model, $solver, $standard, $tips]): PersistedGuidedState => ({
+		currentState: $state,
+		messages: $messages,
+		model: $model,
+		solverResult: $solver,
+		standardFormResult: $standard,
+		tipsHistory: $tips
+	})
+);
+
+if (typeof window !== 'undefined') {
+	_allGuidedState.subscribe((state) => {
+		if (state.currentState === 'SELECT_MODE' && state.messages.length === 0) return;
+		try {
+			window.sessionStorage.setItem(GUIDED_SESSION_KEY, JSON.stringify(state));
+		} catch {
+			// sessionStorage lleno o no disponible — falla silenciosa
+		}
+	});
 }

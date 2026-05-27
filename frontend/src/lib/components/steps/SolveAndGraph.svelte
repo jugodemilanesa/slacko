@@ -17,6 +17,7 @@
 
 	type Phase =
 		| 'solving'
+		| 'degenerate'
 		| 'tutorial-graph'
 		| 'graph-shown'
 		| 'tutorial-vertex'
@@ -39,7 +40,8 @@
 				}))
 			});
 			solverResult.set(result);
-			phase = 'tutorial-graph';
+			const isDegenerate = result.status === 'single_point' || result.status === 'infeasible';
+			phase = isDegenerate ? 'degenerate' : 'tutorial-graph';
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Error al resolver';
 		}
@@ -98,6 +100,31 @@
 			</div>
 			<p class="solving-text">Resolviendo el problema…</p>
 		</div>
+	{:else if $solverResult && phase === 'degenerate'}
+		<div class="degenerate-banner">
+			<span class="degen-icon" aria-hidden="true">⚠</span>
+			<div class="degen-body">
+				<span class="degen-label">
+					{$solverResult.status === 'infeasible' ? 'Región factible vacía' : 'Región factible degenerada'}
+				</span>
+				<p class="degen-msg">
+					{#if $solverResult.warning}
+						{$solverResult.warning}
+					{:else if $solverResult.status === 'infeasible'}
+						Las restricciones son incompatibles: no existe ningún punto que las satisfaga todas a la vez. Revisá si alguna demanda mínima supera la disponibilidad total.
+					{:else}
+						La región factible colapsó a un único punto. Revisá los valores del lado derecho de las restricciones —especialmente aquellas con RHS = 0.
+					{/if}
+				</p>
+				<p class="degen-hint">
+					Corregí las restricciones y volvé a ejecutar el modelo para obtener una solución válida.
+				</p>
+			</div>
+		</div>
+
+		{#if $solverResult.feasible_vertices.length > 0}
+			<SolutionArtifacts model={get(model)} result={$solverResult} show="graph" />
+		{/if}
 	{:else if $solverResult}
 		{#if phase === 'tutorial-graph'}
 			<GraphicalMethodTutorial
@@ -226,6 +253,51 @@
 		margin: 0;
 		color: var(--color-ink);
 		font-size: 0.9rem;
+	}
+
+	.degenerate-banner {
+		display: flex;
+		gap: 0.9rem;
+		padding: 1rem 1.1rem;
+		background: rgba(212, 168, 83, 0.08);
+		border: 1px solid rgba(212, 168, 83, 0.45);
+		border-radius: 10px;
+	}
+
+	.degen-icon {
+		font-size: 1.25rem;
+		line-height: 1.3;
+		color: #c8891a;
+		flex-shrink: 0;
+	}
+
+	.degen-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.degen-label {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: #c8891a;
+		font-weight: 600;
+	}
+
+	.degen-msg {
+		margin: 0;
+		color: var(--color-ink);
+		font-size: 0.88rem;
+		line-height: 1.5;
+	}
+
+	.degen-hint {
+		margin: 0;
+		color: var(--color-ink-muted);
+		font-size: 0.8rem;
+		font-style: italic;
 	}
 
 	.tutorial-collapsed {
