@@ -18,7 +18,38 @@ import json
 import logging
 from typing import Any, Callable
 
+from apps.orchestrator.states import ChatState, next_state
+
 logger = logging.getLogger(__name__)
+
+
+# ─── Helpers ───────────────────────────────────────────────────────────────
+
+
+def _save_model_data(session, updates: dict[str, Any]) -> None:
+    """Merge ``updates`` into ``session.model_data`` and persist."""
+    from apps.chat.models import Session as ChatSession
+
+    if session is None or not isinstance(session, ChatSession):
+        return
+    current = dict(session.model_data or {})
+    current.update(updates)
+    session.model_data = current
+    session.save(update_fields=["model_data", "updated_at"])
+
+
+def _advance_state(session) -> str | None:
+    """Advance to the next state in the guided flow and persist."""
+    from apps.chat.models import Session as ChatSession
+
+    if session is None or not isinstance(session, ChatSession):
+        return None
+    next_s = next_state(session.state)
+    if next_s is None:
+        return None
+    session.state = next_s
+    session.save(update_fields=["state", "updated_at"])
+    return next_s
 
 
 # ─── Tool definitions (sent to the LLM) ───────────────────────────────────
@@ -55,10 +86,12 @@ TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "parse_problem",
             "description": (
-                "Extraé un modelo de Programación Lineal a partir de un "
-                "enunciado en lenguaje natural. Usalo cuando el mensaje del "
-                "usuario describe un problema (menciona cantidades, recursos, "
-                "maximizar/minimizar, restricciones)."
+                "Registrá un modelo de PL extraído del enunciado del usuario. "
+                "PASALE el modelo completo ya estructurado en el campo `model`. "
+                "El handler validará el schema automáticamente.\n\n"
+                "Usalo cuando el usuario pega un enunciado (menciona cantidades, "
+                "recursos, maximizar/minimizar, restricciones). Extraé vos mismo "
+                "el modelo del texto y pasalo como JSON en `model`."
             ),
             "parameters": {
                 "type": "object",
@@ -67,8 +100,18 @@ TOOLS: list[dict[str, Any]] = [
                         "type": "string",
                         "description": "Enunciado completo tal como lo escribió el usuario.",
                     },
+                    "model": {
+                        "type": "object",
+                        "description": (
+                            "LPModel JSON con variables, objective y constraints. "
+                            "Extraé esto del texto del usuario. Schema:\n"
+                            '{"variables": [{"name": "x1", "label": "...", "type": "continuous"}], '
+                            '"objective": {"sense": "maximize|minimize", "coefficients": [c1, c2]}, '
+                            '"constraints": [{"label": "...", "coefficients": [a1, a2], "sign": "<=|>=|=", "rhs": b}]}'
+                        ),
+                    },
                 },
-                "required": ["text"],
+                "required": ["text", "model"],
             },
         },
     },
@@ -88,11 +131,10 @@ TOOLS: list[dict[str, Any]] = [
                         "type": "object",
                         "description": (
                             "LPModel JSON con variables, objective y constraints. "
-                            "Schema en data/wiki/SLACKO.md."
+                            "Si no se pasa, usa el modelo guardado en la sesión."
                         ),
                     },
                 },
-                "required": ["model"],
             },
         },
     },
@@ -109,7 +151,6 @@ TOOLS: list[dict[str, Any]] = [
                 "properties": {
                     "model": {"type": "object"},
                 },
-                "required": ["model"],
             },
         },
     },
@@ -157,10 +198,166 @@ TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "validate_variables",
+            "description": (
+                "Validá las variables de decisión propuestas por el alumno. "
+                "Verificá que sean exactamente 2, tengan nombres con sentido, "
+                "y no sean números o símbolos. Si está OK, guardalas y avanzá "
+                "al siguiente paso. Si no, devolvé feedback pedagógico."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "variables": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string", "description": "Nombre de la variable (x1, x2, etc.)"},
+                                "label": {"type": "string", "description": "Qué representa (ej: 'balones de fútbol')"},
+                            },
+                            "required": ["name", "label"],
+                        },
+                        "description": "Lista de exactamente 2 variables de decisión propuestas por el alumno.",
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Escenario o enunciado para contextualizar el feedback.",
+                    },
+                },
+                "required": ["variables"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "validate_objective",
+            "description": (
+                "Validá la función objetivo propuesta por el alumno. "
+                "Verificá sentido (max/min), coeficientes numéricos, "
+                "y que tenga sentido con el escenario. "
+                "Si está OK, guardala y avanzá al siguiente paso."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sense": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"],
+                        "description": "Sentido de optimización.",
+                    },
+                    "coefficients": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "description": "Coeficientes de la función objetivo [c1, c2].",
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Escenario para contextualizar el feedback.",
+                    },
+                },
+                "required": ["sense", "coefficients"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "validate_constraint",
+            "description": (
+                "Validá una restricción propuesta por el alumno. "
+                "Verificá coeficientes, signo, RHS, y coherencia con el escenario. "
+                "Si está OK, guardala. Llamá una vez por cada restricción."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": "Etiqueta corta (ej: 'Máquina A', 'Materia prima').",
+                    },
+                    "coefficients": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "description": "Coeficientes [a1, a2] de la restricción.",
+                    },
+                    "sign": {
+                        "type": "string",
+                        "enum": ["<=", ">=", "="],
+                        "description": "Tipo de desigualdad.",
+                    },
+                    "rhs": {
+                        "type": "number",
+                        "description": "Lado derecho de la restricción.",
+                    },
+                    "is_last": {
+                        "type": "boolean",
+                        "description": "Si es True, después de validar, avanzá al paso VALIDATE_MODEL.",
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Escenario para contextualizar el feedback.",
+                    },
+                },
+                "required": ["coefficients", "sign", "rhs"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ask_clarifying_question",
+            "description": (
+                "Hacé una pregunta aclaratoria al alumno cuando el enunciado "
+                "tiene ambigüedades. Por ejemplo: 'esto es diario o mensual?', "
+                "'te falta algún recurso?', 'cuál es el objetivo?'."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "Pregunta para el alumno.",
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Opciones sugeridas (opcional).",
+                    },
+                },
+                "required": ["question"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "show_progress_summary",
+            "description": (
+                "Mostrá un resumen de lo que el alumno ya definió hasta ahora. "
+                "Usalo cuando el alumno pide ver su progreso o antes de pasar "
+                "al siguiente paso importante."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Mensaje opcional del LLM para acompañar el resumen.",
+                    },
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "explain_error",
             "description": (
                 "Devolvé un mensaje pedagógico explicando un error específico "
-                "de formulación (no negatividad, signo invertido, no lineal, etc.)."
+                "de formulación (no negatividad, signo invertido, no lineal, etc.). "
+                "Usalo para dar feedback cuando el alumno se equivoca."
             ),
             "parameters": {
                 "type": "object",
@@ -175,6 +372,11 @@ TOOLS: list[dict[str, Any]] = [
                             "infeasible",
                             "non_linear",
                             "more_than_two_variables",
+                            "bad_variable_name",
+                            "wrong_coefficient_count",
+                            "variable_not_in_objective",
+                            "variable_not_in_constraints",
+                            "inconsistent_units",
                         ],
                     },
                     "context": {
@@ -232,18 +434,28 @@ def _handle_theory_lookup(args: dict[str, Any], session) -> dict[str, Any]:
 
 
 def _handle_parse_problem(args: dict[str, Any], session) -> dict[str, Any]:
-    from apps.formulation.extractor import extract_lp_model
+    """Validate the model the LLM already extracted and persist it."""
+    from apps.formulation.validator import ValidationError, validate_lp_model
 
     text = (args.get("text") or "").strip()
+    model = args.get("model") or {}
+
     if not text:
         return {"error": "MISSING_TEXT"}
+    if not model:
+        return {"error": "MISSING_MODEL", "details": "El LLM debe extraer el modelo y pasarlo en el campo `model` del tool call."}
 
     try:
-        model = extract_lp_model(text)
-        return {"ok": True, "model": model}
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("parse_problem failed")
-        return {"ok": False, "error": "PARSE_FAILED", "details": str(exc)}
+        validate_lp_model(model)
+    except ValidationError as exc:
+        return {"ok": False, "error": exc.code, "message": str(exc)}
+
+    model["_raw_text"] = text
+
+    _save_model_data(session, {"parsed_model": model, "scenario": model.get("scenario", {})})
+    _advance_state(session)
+
+    return {"ok": True, "model": model}
 
 
 def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
@@ -251,6 +463,11 @@ def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
     from apps.solver.engine import Constraint as EngineConstraint, solve
 
     model = args.get("model") or {}
+    if not model and session is not None:
+        model = (getattr(session, "model_data", None) or {}).get("parsed_model", {})
+    if not model:
+        return {"ok": False, "error": "MISSING_MODEL", "message": "No hay modelo para resolver."}
+
     try:
         validate_lp_model(model)
     except ValidationError as exc:
@@ -294,6 +511,12 @@ def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
             response["ok"] = False
             response["degenerate_case"] = result.status
             response["warning"] = result.warning
+
+        _save_model_data(session, {"solution": response})
+
+        if session is not None and getattr(session, "state", None) in (ChatState.SOLVE_AND_GRAPH,):
+            _advance_state(session)
+
         return response
     except Exception as exc:  # noqa: BLE001
         logger.exception("solve_lp failed")
@@ -301,8 +524,6 @@ def _handle_solve_lp(args: dict[str, Any], session) -> dict[str, Any]:
 
 
 def _handle_graph_lp(args: dict[str, Any], session) -> dict[str, Any]:
-    # Plotly data generation; for now delegate to solver result + frontend.
-    # Returns a hint for the frontend to render with the computed solution.
     solved = _handle_solve_lp(args, session)
     if not solved.get("ok"):
         return solved
@@ -338,6 +559,11 @@ def _handle_convert_form(args: dict[str, Any], session) -> dict[str, Any]:
                 sense=objective.get("sense", "maximize"),
                 constraints=model.get("constraints", []),
             )
+            _save_model_data(session, {"standard_form": standard})
+
+            if session is not None and getattr(session, "state", None) in (ChatState.CONVERT_FORMS,):
+                _advance_state(session)
+
             return {"ok": True, "standard_form": standard}
         return {"ok": False, "error": f"UNSUPPORTED_TARGET:{target}"}
     except Exception as exc:  # noqa: BLE001
@@ -360,6 +586,198 @@ def _handle_start_guided_mode(args: dict[str, Any], session) -> dict[str, Any]:
         "mode": "guided",
         "next_step": "INPUT_ENUNCIADO",
         "ui_action": "switch_to_guided_mode",
+    }
+
+
+def _handle_validate_variables(args: dict[str, Any], session) -> dict[str, Any]:
+    variables = args.get("variables") or []
+    context = args.get("context", "")
+
+    feedback: list[str] = []
+
+    if len(variables) != 2:
+        feedback.append(
+            "Necesitás exactamente 2 variables de decisión para usar el método gráfico. "
+            "Identificá las dos cantidades principales que querés decidir."
+        )
+
+    for i, v in enumerate(variables):
+        name = v.get("name", "").strip()
+        label = v.get("label", "").strip()
+        if not name:
+            feedback.append(f"La variable {i+1} no tiene nombre.")
+        elif name.isdigit() or (name.startswith("-") and name[1:].isdigit()):
+            feedback.append(f"'{name}' no es un nombre válido de variable. Usá algo como 'x{i+1}' o un nombre descriptivo.")
+        if not label:
+            feedback.append(f"La variable '{name}' necesita una descripción de qué representa.")
+
+    if feedback:
+        return {"ok": False, "feedback": feedback}
+
+    _save_model_data(session, {"variables": variables})
+    _advance_state(session)
+
+    return {
+        "ok": True,
+        "variables": variables,
+        "feedback": ["Variables registradas correctamente."],
+    }
+
+
+def _handle_validate_objective(args: dict[str, Any], session) -> dict[str, Any]:
+    sense = args.get("sense")
+    coefficients = args.get("coefficients") or []
+    context = args.get("context", "")
+
+    feedback: list[str] = []
+
+    if sense not in ("maximize", "minimize"):
+        feedback.append("El sentido debe ser 'maximize' o 'minimize'.")
+    if len(coefficients) != 2:
+        feedback.append(f"Se necesitan exactamente 2 coeficientes (recibí {len(coefficients)}).")
+    for c in coefficients:
+        if not isinstance(c, (int, float)):
+            feedback.append(f"El coeficiente {c} no es un número válido.")
+
+    if feedback:
+        return {"ok": False, "feedback": feedback}
+
+    _save_model_data(session, {"objective": {"sense": sense, "coefficients": coefficients}})
+    _advance_state(session)
+
+    return {
+        "ok": True,
+        "objective": {"sense": sense, "coefficients": coefficients},
+        "feedback": ["Función objetivo registrada correctamente."],
+    }
+
+
+def _handle_validate_constraint(args: dict[str, Any], session) -> dict[str, Any]:
+    coefficients = args.get("coefficients") or []
+    sign = args.get("sign")
+    rhs = args.get("rhs")
+    label = args.get("label", f"Restricción")
+    context = args.get("context", "")
+    is_last = args.get("is_last", False)
+
+    feedback: list[str] = []
+
+    if sign not in ("<=", ">=", "="):
+        feedback.append(f"El signo '{sign}' no es válido. Usá <=, >=, o =.")
+    if len(coefficients) != 2:
+        feedback.append(f"Se necesitan exactamente 2 coeficientes (recibí {len(coefficients)}).")
+    for c in coefficients:
+        if not isinstance(c, (int, float)):
+            feedback.append(f"El coeficiente {c} no es un número válido.")
+    if not isinstance(rhs, (int, float)):
+        feedback.append(f"El RHS {rhs} no es un número válido.")
+
+    if feedback:
+        return {"ok": False, "feedback": feedback}
+
+    constraint = {"label": label, "coefficients": coefficients, "sign": sign, "rhs": rhs}
+    current = dict(session.model_data or {}) if session is not None else {}
+    existing = list(current.get("constraints", []))
+    existing.append(constraint)
+    _save_model_data(session, {"constraints": existing})
+
+    if is_last:
+        _advance_state(session)
+
+    return {
+        "ok": True,
+        "constraint": constraint,
+        "constraint_count": len(existing),
+        "feedback": [f"Restricción '{label}' registrada correctamente."],
+    }
+
+
+def _handle_ask_clarifying_question(args: dict[str, Any], session) -> dict[str, Any]:
+    """This tool just returns the question — the LLM already said it to the user."""
+    question = args.get("question", "")
+    options = args.get("options", [])
+
+    _save_model_data(session, {"last_clarifying_question": question, "clarifying_options": options})
+
+    return {
+        "ok": True,
+        "question": question,
+        "options": options,
+    }
+
+
+def _handle_show_progress_summary(args: dict[str, Any], session) -> dict[str, Any]:
+    from apps.chat.models import Session as ChatSession
+
+    if session is None or not isinstance(session, ChatSession):
+        return {"ok": False, "error": "NO_SESSION"}
+
+    model_data = session.model_data or {}
+
+    variables = model_data.get("variables", [])
+    objective = model_data.get("objective", {})
+    constraints = model_data.get("constraints", [])
+    scenario = model_data.get("scenario", {})
+    solution = model_data.get("solution", {})
+
+    if objective and objective.get("coefficients"):
+        obj_str = f"{'Max' if objective['sense'] == 'maximize' else 'Min'} Z = " + " + ".join(
+            f"{c}x{i+1}" for i, c in enumerate(objective["coefficients"])
+        )
+    else:
+        obj_str = "No definida aún"
+
+    constraints_str = "\n".join(
+        f"  {c.get('label', f'R{i+1}')}: {' + '.join(f'{a}x{j+1}' for j, a in enumerate(c['coefficients']))} {c['sign']} {c['rhs']}"
+        for i, c in enumerate(constraints)
+    ) if constraints else "  Ninguna aún"
+
+    status = {
+        "state": session.state,
+        "mode": session.mode,
+        "scenario_type": scenario.get("type", "No clasificado"),
+        "variables_count": len(variables),
+        "constraints_count": len(constraints),
+    }
+
+    summary_lines = [
+        f"**Modo:** {session.mode} | **Paso:** {session.state}",
+        f"**Escenario:** {scenario.get('description', 'No ingresado')}",
+        "",
+        "**Variables de decisión:**",
+    ]
+    if variables:
+        for v in variables:
+            summary_lines.append(f"  - {v['name']}: {v.get('label', 'Sin descripción')}")
+    else:
+        summary_lines.append("  (ninguna definida aún)")
+
+    summary_lines.extend([
+        "",
+        f"**Función objetivo:** {obj_str}",
+        "",
+        "**Restricciones:**",
+        constraints_str,
+    ])
+
+    if solution.get("ok"):
+        sp = solution.get("optimal_point", {})
+        sv = solution.get("optimal_value")
+        summary_lines.extend([
+            "",
+            f"**Solución óptima:** x1={sp.get('x1')}, x2={sp.get('x2')}, Z={sv}",
+        ])
+
+    return {
+        "ok": True,
+        "summary": "\n".join(summary_lines),
+        "status": status,
+        "model_data": {
+            "variables": variables,
+            "objective": objective,
+            "constraints": constraints,
+            "solution_available": solution.get("ok", False),
+        },
     }
 
 
@@ -398,6 +816,30 @@ def _handle_explain_error(args: dict[str, Any], session) -> dict[str, Any]:
             "método gráfico, que solo cubre 2 variables. Para más variables "
             "necesitarías el método símplex."
         ),
+        "bad_variable_name": (
+            "El nombre de la variable no parece válido. Usá nombres cortos "
+            "como x1, x2 o palabras que representen cantidades a decidir "
+            "(ej: 'balones', 'horas_taller')."
+        ),
+        "wrong_coefficient_count": (
+            "Revisá la cantidad de coeficientes. Cada restricción debe tener "
+            "exactamente un coeficiente por variable de decisión."
+        ),
+        "variable_not_in_objective": (
+            "Una de las variables no aparece en la función objetivo. "
+            "Revisá el enunciado: ¿todas las variables deberían contribuir al objetivo?"
+        ),
+        "variable_not_in_constraints": (
+            "Una de las variables aparece en el objetivo pero no en ninguna "
+            "restricción. Sin restricciones, esa variable puede crecer "
+            "indefinidamente y el problema sería no acotado."
+        ),
+        "inconsistent_units": (
+            "Parece haber una inconsistencia de unidades. Asegurate de que "
+            "todas las cantidades estén en la misma base (horas, kg, unidades, etc.). "
+            "Por ejemplo, si un recurso se mide en horas/día y otro en horas/semana, "
+            "convertilos a una misma unidad."
+        ),
     }
     return {
         "ok": True,
@@ -417,6 +859,11 @@ _HANDLERS: dict[str, Callable[[dict[str, Any], Any], dict[str, Any]]] = {
     "graph_lp": _handle_graph_lp,
     "convert_form": _handle_convert_form,
     "start_guided_mode": _handle_start_guided_mode,
+    "validate_variables": _handle_validate_variables,
+    "validate_objective": _handle_validate_objective,
+    "validate_constraint": _handle_validate_constraint,
+    "ask_clarifying_question": _handle_ask_clarifying_question,
+    "show_progress_summary": _handle_show_progress_summary,
     "explain_error": _handle_explain_error,
 }
 
@@ -437,7 +884,8 @@ def dispatch_tool(name: str, raw_arguments: str | dict, session=None) -> dict[st
         return {"error": "UNKNOWN_TOOL", "name": name}
 
     try:
-        return handler(args, session)
+        result = handler(args, session)
+        return result
     except Exception as exc:  # noqa: BLE001
         logger.exception("Tool %s crashed", name)
         return {"error": "TOOL_CRASHED", "tool": name, "details": str(exc)}

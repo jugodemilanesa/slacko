@@ -54,3 +54,25 @@ class ChatState:
         SOLVE_AND_GRAPH,
         INTERPRET,
     ]
+
+
+def next_state(current: str) -> str | None:
+    """Return the next state in the guided flow, or ``None`` if already at the end."""
+    try:
+        idx = ChatState.GUIDED_FLOW.index(current)
+        if idx + 1 < len(ChatState.GUIDED_FLOW):
+            return ChatState.GUIDED_FLOW[idx + 1]
+        return None
+    except ValueError:
+        return None
+
+
+def previous_state(current: str) -> str | None:
+    """Return the previous state in the guided flow, or ``None`` if at the start."""
+    try:
+        idx = ChatState.GUIDED_FLOW.index(current)
+        if idx - 1 >= 0:
+            return ChatState.GUIDED_FLOW[idx - 1]
+        return None
+    except ValueError:
+        return None
