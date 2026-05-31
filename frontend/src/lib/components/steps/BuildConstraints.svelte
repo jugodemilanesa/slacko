@@ -37,7 +37,7 @@
 	// In-place editing state
 	let editingIndex = $state<number | null>(null);
 
-	let localConstraints: Constraint[] = $state([]);
+	let localConstraints: Constraint[] = $state([...get(model).constraints]);
 
 	function resetForm() {
 		label = '';
