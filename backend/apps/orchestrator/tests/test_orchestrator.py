@@ -101,6 +101,61 @@ def test_orchestrator_dispatches_tool_then_finalizes(chat_session, settings, mon
     assert any("region-factible" in c for c in result.citations)
 
 
+def test_orchestrator_dispatches_leaked_tool_call_end_to_end(
+    chat_session, settings, monkeypatch
+):
+    """A provider that leaks its tool call as text must still drive a dispatch.
+
+    Exercises the real normalization path (mocks ``litellm.completion``, not
+    ``llm.complete``) so the salvage of ``tool_code print(default_api...)``
+    runs for real and the orchestrator actually invokes the tool.
+    """
+
+    import sys
+
+    settings.LLM_PROVIDERS = [
+        {"name": "gemini", "model": "gemini/x", "api_key": "fake", "rpm": 100}
+    ]
+
+    def _resp(message):
+        choice = SimpleNamespace(message=message, finish_reason="stop")
+        return SimpleNamespace(choices=[choice])
+
+    # Hop 1: leaked theory_lookup as text. Hop 2: clean final answer.
+    completions = iter(
+        [
+            _resp(
+                SimpleNamespace(
+                    content=(
+                        "tool_code print(default_api.theory_lookup("
+                        "question='qué es la región factible')) thought ..."
+                    ),
+                    tool_calls=None,
+                )
+            ),
+            _resp(
+                SimpleNamespace(
+                    content="La región factible es el conjunto de puntos válidos.",
+                    tool_calls=None,
+                )
+            ),
+        ]
+    )
+    fake_litellm = SimpleNamespace(completion=lambda **kw: next(completions))
+    monkeypatch.setitem(sys.modules, "litellm", fake_litellm)
+    from apps.orchestrator import usage
+
+    monkeypatch.setattr(usage, "is_near_cap", lambda provider: False)
+
+    result = run_turn(chat_session, "qué es la región factible")
+
+    assert any(tc["name"] == "theory_lookup" for tc in result.tool_calls)
+    assert "factible" in result.content.lower()
+    # The raw leaked text must never reach the user.
+    assert "tool_code" not in result.content
+    assert "default_api" not in result.content
+
+
 # ---------------------------------------------------------------------------
 # Guided mode integration tests
 # ---------------------------------------------------------------------------

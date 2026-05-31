@@ -217,6 +217,11 @@ LLM_PROVIDERS = [
         "api_key": env("GEMINI_API_KEY", default=""),
         "rpm": 10,
         "rpd": 1500,
+        # Gemini 2.5 Flash thinking-mode a veces emite la tool call como texto
+        # (`tool_code print(default_api.foo(...))`) en vez de un tool_call
+        # estructurado. `reasoning_effort="none"` mapea a thinkingBudget=0 +
+        # includeThoughts=False en LiteLLM, lo que evita esa fuga.
+        "extra_params": {"reasoning_effort": "none"},
     },
     {
         "name": "groq",
