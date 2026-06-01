@@ -115,6 +115,21 @@
 </div>
 
 <style>
+	@property --gradient-angle {
+		syntax: '<angle>';
+		initial-value: 60deg;
+		inherits: false;
+	}
+
+	@keyframes spin {
+		0% {
+			--gradient-angle: 60deg;
+		}
+		100% {
+			--gradient-angle: 420deg;
+		}
+	}
+
 	/* LLM card — uses a 1px gradient ring (indigo→gold) instead of a flat
 	   border. The ring is implemented with a padding+linear-gradient wrapper
 	   and an inset white card so the gradient only touches the border. */
@@ -125,7 +140,7 @@
 		padding: 1.5px;
 		border-radius: 0.85rem;
 		background: linear-gradient(
-			135deg,
+			var(--gradient-angle),
 			var(--color-primary),
 			var(--color-accent)
 		);
@@ -134,6 +149,7 @@
 		transition: transform 0.18s ease, box-shadow 0.18s ease;
 		text-align: left;
 		font-family: var(--font-body);
+		animation: spin 12s linear infinite;
 	}
 
 	.llm-card:hover {
@@ -178,7 +194,7 @@
 		height: 42px;
 		border-radius: 0.6rem;
 		background: linear-gradient(
-			135deg,
+			var(--gradient-angle),
 			color-mix(in srgb, var(--color-primary) 14%, transparent),
 			color-mix(in srgb, var(--color-accent) 14%, transparent)
 		);
@@ -187,10 +203,15 @@
 		justify-content: center;
 		flex-shrink: 0;
 		transition: background 0.22s ease;
+		animation: spin 12s linear infinite;
 	}
 
 	.llm-card:hover .llm-icon {
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		background: linear-gradient(
+			var(--gradient-angle),
+			var(--color-primary),
+			var(--color-accent)
+		);
 	}
 
 	.llm-glyph {
@@ -198,12 +219,17 @@
 		font-style: italic;
 		font-size: 1.55rem;
 		line-height: 1;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		background: linear-gradient(
+			var(--gradient-angle),
+			var(--color-primary),
+			var(--color-accent)
+		);
 		-webkit-background-clip: text;
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
 		color: transparent;
 		transition: -webkit-text-fill-color 0.22s ease, color 0.22s ease;
+		animation: spin 12s linear infinite;
 	}
 
 	.llm-card:hover .llm-glyph {
@@ -236,8 +262,13 @@
 		padding: 0.18rem 0.5rem;
 		border-radius: 999px;
 		color: white;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		background: linear-gradient(
+			var(--gradient-angle),
+			var(--color-primary),
+			var(--color-accent)
+		);
 		font-weight: 500;
+		animation: spin 12s linear infinite;
 	}
 
 	.llm-sub {

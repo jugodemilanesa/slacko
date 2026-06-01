@@ -26,7 +26,7 @@
 <div class="flex items-center justify-center min-h-screen">
 	<div class="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
 		<h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Slacko</h1>
-		<p class="text-center text-gray-500 mb-8">Tu tutor de Investigación Operativa</p>
+		<p class="text-center text-gray-500 mb-8">Tu tutor de Programación Lineal</p>
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}

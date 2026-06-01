@@ -78,7 +78,6 @@ export interface TipEntry {
 }
 
 const STEP_ORDER: ChatState[] = [
-	'SELECT_MODE',
 	'INPUT_ENUNCIADO',
 	'DEFINE_OBJECTIVE',
 	'DEFINE_VARIABLES',
@@ -195,6 +194,12 @@ export function addStepDivider(label: string, step: ChatState) {
 
 export function advanceState() {
 	currentState.update((state) => {
+		if (state === 'SELECT_MODE') {
+			const next = STEP_ORDER[0];
+			// inject divider for traceability
+			addMessage('divider', STEP_LABELS[next], next);
+			return next;
+		}
 		const idx = STEP_ORDER.indexOf(state);
 		if (idx >= 0 && idx < STEP_ORDER.length - 1) {
 			const next = STEP_ORDER[idx + 1];

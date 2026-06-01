@@ -36,7 +36,129 @@
 	import LLMChatMode from '$lib/components/steps/LLMChatMode.svelte';
 
 	let chatContainer: HTMLDivElement;
-	let sidebarOpen = $state(true);
+	let sidebarOpen = $state(false);
+
+	let typedTitle = $state('');
+
+	$effect(() => {
+		if ($currentState === 'SELECT_MODE') {
+			typedTitle = '';
+
+			function generateTypingFrames() {
+				const target = 'Slacko';
+				const frames: { text: string; delay: number }[] = [];
+				
+				// 30% chance of typing it perfectly without any typos
+				const shouldMakeTypo = Math.random() < 0.7;
+				
+				if (!shouldMakeTypo) {
+					let currentText = '';
+					for (let i = 0; i < target.length; i++) {
+						currentText += target[i];
+						frames.push({
+							text: currentText,
+							delay: 70 + Math.random() * 70 // Faster speed when there are no typos
+						});
+					}
+					return frames;
+				}
+				
+				// Choose a random index for the typo: 2 ('a'), 3 ('c'), or 4 ('k')
+				const typoIndex = 2 + Math.floor(Math.random() * 3);
+				
+				// Extra letters typed before realizing: 0 (immediate), 1, or 2 extra letters
+				const rand = Math.random();
+				const extraLettersCount = rand < 0.4 ? 0 : (rand < 0.8 ? 1 : 2);
+				
+				const typosMap: Record<number, string> = {
+					2: 's', // Sla -> Sls
+					3: 'x', // Slac -> Slax
+					4: 'j'  // Slack -> Slacj
+				};
+				const wrongChar = typosMap[typoIndex] || 'x';
+				
+				let currentText = '';
+				
+				// 1. Type normally up to the typo index (original slower speed)
+				for (let i = 0; i < typoIndex; i++) {
+					currentText += target[i];
+					frames.push({
+						text: currentText,
+						delay: 120 + Math.random() * 100
+					});
+				}
+				
+				// 2. Type the typo letter (original slower speed)
+				currentText += wrongChar;
+				frames.push({
+					text: currentText,
+					delay: 100 + Math.random() * 100
+				});
+				
+				// 3. Type extra letters thinking it was correct (original slower speed)
+				for (let j = 0; j < extraLettersCount; j++) {
+					const nextCharIndex = typoIndex + 1 + j;
+					if (nextCharIndex < target.length) {
+						currentText += target[nextCharIndex];
+						frames.push({
+							text: currentText,
+							delay: 110 + Math.random() * 90
+						});
+					}
+				}
+				
+				// 4. Pause before realizing the mistake (original slower speed)
+				if (frames.length > 0) {
+					frames[frames.length - 1].delay = 450 + Math.random() * 150;
+				}
+				
+				// 5. Backspace the wrong characters (original slower speed)
+				const charsToDelete = currentText.length - typoIndex;
+				for (let d = 0; d < charsToDelete; d++) {
+					currentText = currentText.slice(0, -1);
+					frames.push({
+						text: currentText,
+						delay: 80 + Math.random() * 60 // backspace is fast
+					});
+				}
+				
+				// 6. Pause before typing the correct letters (original slower speed)
+				if (frames.length > 0) {
+					frames[frames.length - 1].delay = 350 + Math.random() * 150;
+				}
+				
+				// 7. Finish typing the rest of the word correctly (faster speed once corrected!)
+				for (let i = typoIndex; i < target.length; i++) {
+					currentText += target[i];
+					frames.push({
+						text: currentText,
+						delay: 70 + Math.random() * 70
+					});
+				}
+				
+				return frames;
+			}
+
+			const frames = generateTypingFrames();
+			let frameIndex = 0;
+			let timeoutId: ReturnType<typeof setTimeout>;
+
+			function typeNextFrame() {
+				if (frameIndex < frames.length) {
+					const currentFrame = frames[frameIndex];
+					typedTitle = currentFrame.text;
+					const nextDelay = currentFrame.delay;
+					frameIndex++;
+					timeoutId = setTimeout(typeNextFrame, nextDelay);
+				}
+			}
+
+			// Start with an initial delay to feel like the page has loaded first
+			timeoutId = setTimeout(typeNextFrame, 200 + Math.random() * 150);
+
+			return () => clearTimeout(timeoutId);
+		}
+	});
 
 	const inTheoryMode = $derived($currentState === 'THEORY_QUERY');
 	const inTutorialMode = $derived($currentState === 'TUTORIAL');
@@ -51,7 +173,7 @@
 		const restored = restoreGuidedState();
 		if (!restored && $messages.length === 0) {
 			sendAssistantMessage(
-				'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+				'Hola! Soy **Slacko**, tu tutor de Programación Lineal. ¿Cómo querés trabajar hoy?',
 				{ delay: 600, expression: 'happy' }
 			);
 		}
@@ -77,7 +199,7 @@
 		clearTheory();
 		resetChat();
 		sendAssistantMessage(
-			'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+			'Hola! Soy **Slacko**, tu tutor de Programación Lineal. ¿Cómo querés trabajar hoy?',
 			{ delay: 600, expression: 'happy' }
 		);
 	}
@@ -85,27 +207,28 @@
 
 <div class="flex h-screen overflow-hidden bg-surface">
 	<!-- Sidebar (only for guided flow) -->
-	{#if !inFullMode}
+	{#if !inFullMode && $currentState !== 'SELECT_MODE'}
 		<ModelSidebar open={sidebarOpen} />
 	{/if}
 
 	<div class="flex flex-col flex-1 min-w-0">
 		<!-- Header (full width at top) -->
 		<header
-			class="bg-surface-card border-b border-bot-border px-6 py-3 flex items-center gap-4 shrink-0"
+			class="relative bg-surface-card border-b border-bot-border px-6 flex items-center justify-between shrink-0 h-[76px]"
 		>
-			{#if !inFullMode}
-				<button
-					onclick={() => (sidebarOpen = !sidebarOpen)}
-					class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
-						text-ink-muted hover:text-ink transition-colors cursor-pointer text-sm"
-					title={sidebarOpen ? 'Ocultar modelo' : 'Mostrar modelo'}
-				>
-					{sidebarOpen ? '◀' : '▶'}
-				</button>
-			{/if}
+			<!-- Left side: sidebar toggle + Slacko title + badges -->
+			<div class="flex items-center gap-4">
+				{#if !inFullMode && $currentState !== 'SELECT_MODE'}
+					<button
+						onclick={() => (sidebarOpen = !sidebarOpen)}
+						class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
+							text-ink-muted hover:text-ink transition-colors cursor-pointer text-sm"
+						title={sidebarOpen ? 'Ocultar modelo' : 'Mostrar modelo'}
+					>
+						{sidebarOpen ? '◀' : '▶'}
+					</button>
+				{/if}
 
-			<div class="flex-1">
 				<div class="flex items-center gap-3">
 					<h1 class="font-display text-2xl text-ink">Slacko</h1>
 					{#if inTheoryMode}
@@ -128,26 +251,22 @@
 						>
 							Chat con IA
 						</span>
-					{:else if $isGuidedFlow}
+					{:else if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
 						<span class="text-xs text-ink-muted bg-surface-warm px-2 py-0.5 rounded-full">
 							Paso {$currentStepIndex + 1} de {STEP_ORDER.length} — {STEP_LABELS[$currentState]}
 						</span>
 					{/if}
 				</div>
-				{#if !inFullMode}
-					<div class="mt-1.5 pb-6 max-w-md">
-						<ProgressBar />
-					</div>
-				{/if}
 			</div>
 
+			<!-- Right side: action buttons -->
 			<div class="flex items-center gap-2">
 				<button
 					onclick={handleNewChat}
 					class="text-xs text-ink-muted hover:text-ink px-3 py-1.5 rounded-lg hover:bg-surface-warm
 						transition-colors cursor-pointer"
 				>
-					Nuevo problema
+					Menú principal
 				</button>
 				<button
 					onclick={logout}
@@ -157,6 +276,13 @@
 					Salir
 				</button>
 			</div>
+
+			<!-- ProgressBar absolutely positioned at the bottom of the header (only in guided flow) -->
+			{#if !inFullMode && $currentState !== 'SELECT_MODE'}
+				<div class="absolute bottom-2 left-6 max-w-md w-[calc(100%-3rem)]">
+					<ProgressBar />
+				</div>
+			{/if}
 		</header>
 
 		<!-- Below header: theory/tutorial full-width, guided flow with tips panel al costado -->
@@ -180,22 +306,52 @@
 					{/key}
 				</div>
 			{:else}
-				<div bind:this={chatContainer} id="chat-container" class="flex-1 overflow-y-auto">
-					<div class="px-6 py-6 space-y-4">
-						<!-- Rendered messages (con expresión por mensaje) -->
-						{#each $messages as msg (msg.id)}
-							<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
-						{/each}
+				<div bind:this={chatContainer} id="chat-container" class="relative flex-1 overflow-y-auto">
+					<div class="px-6 py-6 space-y-4 {$currentState === 'SELECT_MODE' ? 'min-h-full flex flex-col justify-center' : ''}">
+						{#if $currentState === 'SELECT_MODE'}
+							<!-- Background Image at the top of the main menu with a gradient fading to the page background -->
+							<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden">
+								<img src="/background.jpg" alt="" class="w-full h-full object-cover opacity-35" />
+								<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
+							</div>
 
-						<!-- Indicador de tipeo mientras Slacko 'piensa' -->
-						{#if $assistantThinking}
-							<TypingIndicator />
+							<div class="relative z-10 text-center mb-6 select-none">
+								<h1 class="relative inline-block font-display text-5xl md:text-6xl text-ink tracking-tight font-normal">
+									{typedTitle}<span class="cursor-blink"></span>
+								</h1>
+								<p class="text-[0.65rem] tracking-[0.25em] uppercase font-mono text-accent mt-2">
+									TUTOR DE PROGRAMACIÓN LINEAL
+								</p>
+							</div>
+
+							<!-- Container with fixed height to keep title/subtitle in final stable positions (responsive alignment) -->
+							<div class="relative z-10 h-[96px] flex items-end justify-center md:justify-start shrink-0">
+								<div class="w-full max-w-md md:max-w-[75%]">
+									{#each $messages as msg (msg.id)}
+										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+									{/each}
+
+									{#if $assistantThinking}
+										<TypingIndicator />
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<!-- Rendered messages (con expresión por mensaje) -->
+							{#each $messages as msg (msg.id)}
+								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+							{/each}
+
+							<!-- Indicador de tipeo mientras Slacko 'piensa' -->
+							{#if $assistantThinking}
+								<TypingIndicator />
+							{/if}
 						{/if}
 
 						<!-- Paso activo (queda al final; los pasos anteriores quedan trazados
 							 en los divisores y mensajes del scroll) -->
-						<div class="flex justify-start">
-							<div class="max-w-[85%] w-full">
+						<div class="relative z-10 flex {$currentState === 'SELECT_MODE' ? 'justify-center' : 'justify-start'}">
+							<div class="{$currentState === 'SELECT_MODE' ? 'max-w-md mt-8' : 'max-w-[85%]'} w-full">
 								{#key $currentState}
 									{#if $currentState === 'SELECT_MODE'}
 										<SelectMode />
@@ -253,5 +409,25 @@
 		-webkit-mask-composite: xor;
 		mask-composite: exclude;
 		pointer-events: none;
+	}
+
+	.cursor-blink {
+		position: absolute;
+		display: inline-block;
+		width: 0.28em;
+		height: 2px;
+		background-color: var(--color-accent);
+		bottom: 0.15em;
+		margin-left: 0.08em;
+		animation: blink 1.8s step-end infinite;
+	}
+
+	@keyframes blink {
+		from, to {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 </style>

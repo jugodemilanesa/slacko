@@ -15,7 +15,7 @@
 	async function restart() {
 		resetChat();
 		await sendAssistantMessage(
-			'Hola! Soy **Slacko**, tu tutor de Investigación Operativa. ¿Cómo querés trabajar hoy?',
+			'Hola! Soy **Slacko**, tu tutor de Programación Lineal. ¿Cómo querés trabajar hoy?',
 			{ delay: 600, expression: 'happy' }
 		);
 	}

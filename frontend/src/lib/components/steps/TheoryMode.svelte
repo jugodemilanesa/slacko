@@ -645,7 +645,7 @@
 	}
 
 	.hero-title .drop.closing {
-		transform: translateY(0.06em) rotate(180deg);
+		transform: translateY(0.06em);
 		display: inline-block;
 	}
 

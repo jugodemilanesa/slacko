@@ -7,7 +7,7 @@
 		size = 'md',
 		alt = 'Slaking',
 		floating = false,
-		ring = false,
+		ring = true, // Enabled by default to show the circular frame
 		class: className = ''
 	}: {
 		expression?: Expression;
@@ -19,47 +19,34 @@
 	} = $props();
 
 	const SIZE_MAP: Record<Size, number> = {
-		xs: 24,
-		sm: 32,
-		md: 44,
-		lg: 64,
-		xl: 96
+		xs: 28,
+		sm: 60,
+		md: 56,
+		lg: 76,
+		xl: 110
 	};
 
 	const pixelSize = $derived(typeof size === 'number' ? size : SIZE_MAP[size]);
-
-	// Fallback chain: <expression>.png -> <expression>.svg -> idle.svg
-	let src = $state(`/slaking/${expression}.png`);
-	let fallbackStep = $state(0);
-
-	$effect(() => {
-		src = `/slaking/${expression}.png`;
-		fallbackStep = 0;
-	});
-
-	function handleError() {
-		if (fallbackStep === 0) {
-			fallbackStep = 1;
-			src = `/slaking/${expression}.svg`;
-		} else if (fallbackStep === 1 && expression !== 'idle') {
-			fallbackStep = 2;
-			src = '/slaking/idle.svg';
-		}
-	}
+	
+	// Use the animated Slaking GIF
+	const src = '/slaking/slaking.gif';
 </script>
 
-<img
-	{src}
-	{alt}
-	width={pixelSize}
-	height={pixelSize}
-	onerror={handleError}
-	class="shrink-0 select-none {floating ? 'animate-[float_3s_ease-in-out_infinite]' : ''}
-		{ring ? 'ring-2 ring-bot-border rounded-full bg-surface-card' : ''}
+<div
+	class="shrink-0 select-none overflow-hidden rounded-full flex items-center justify-center
+		{ring ? 'ring-2 ring-bot-border mb-[-10px]' : ''}
+		{floating ? 'animate-[float_3s_ease-in-out_infinite]' : ''}
 		{className}"
-	style="image-rendering: -webkit-optimize-contrast;"
-	draggable="false"
-/>
+	style="width: {pixelSize}px; height: {pixelSize}px; background: {ring ? 'linear-gradient(135deg, #a5b4fc, #fde047)' : 'transparent'};"
+>
+	<img
+		{src}
+		{alt}
+		class="w-full h-full"
+		style="image-rendering: pixelated; object-fit: contain; transform: scale(1.8) translate(-26%, 8%);"
+		draggable="false"
+	/>
+</div>
 
 <style>
 	@keyframes float {
