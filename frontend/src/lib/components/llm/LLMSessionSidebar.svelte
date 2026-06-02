@@ -307,7 +307,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		transition: all 0.15s ease;
 		flex-shrink: 0;
 	}
 
@@ -402,7 +401,6 @@
 		cursor: pointer;
 		text-align: left;
 		font-family: var(--font-body);
-		transition: background 0.15s ease, border-color 0.15s ease;
 	}
 
 	.item:hover {
@@ -501,7 +499,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		transition: all 0.12s ease;
 	}
 
 	.act:hover {

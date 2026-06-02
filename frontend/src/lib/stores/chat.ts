@@ -172,6 +172,8 @@ export interface SendOptions {
 	step?: ChatState;
 }
 
+let activeAssistantTimeout: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Envía un mensaje del asistente con un pequeño retardo y muestra el avatar en
  * modo 'thinking' mientras tanto. Devuelve una promesa que resuelve cuando el
@@ -183,9 +185,20 @@ export async function sendAssistantMessage(
 ): Promise<void> {
 	const delay = opts.delay ?? 650;
 	assistantThinking.set(true);
-	await new Promise((r) => setTimeout(r, delay));
-	assistantThinking.set(false);
-	addMessage('assistant', content, opts.step, opts.expression ?? 'idle');
+
+	if (activeAssistantTimeout) {
+		clearTimeout(activeAssistantTimeout);
+		activeAssistantTimeout = null;
+	}
+
+	return new Promise((resolve) => {
+		activeAssistantTimeout = setTimeout(() => {
+			assistantThinking.set(false);
+			addMessage('assistant', content, opts.step, opts.expression ?? 'idle');
+			activeAssistantTimeout = null;
+			resolve();
+		}, delay);
+	});
 }
 
 export function addStepDivider(label: string, step: ChatState) {
@@ -216,6 +229,12 @@ export function goToState(state: ChatState) {
 }
 
 export function resetChat() {
+	if (activeAssistantTimeout) {
+		clearTimeout(activeAssistantTimeout);
+		activeAssistantTimeout = null;
+	}
+	assistantThinking.set(false);
+
 	if (typeof window !== 'undefined') {
 		window.sessionStorage.removeItem(GUIDED_SESSION_KEY);
 	}

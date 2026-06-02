@@ -231,7 +231,14 @@
 				{/if}
 
 				<div class="flex items-center gap-3">
-					<h1 class="font-display text-2xl text-ink">Slacko</h1>
+					<h1 class="font-display text-2xl text-ink">
+						<button
+							onclick={handleNewChat}
+							class="cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0 text-inherit font-inherit"
+						>
+							Slacko
+						</button>
+					</h1>
 					{#if inTheoryMode}
 						<span
 							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-accent

@@ -103,7 +103,7 @@
 			{/if}
 
 			<div class="footer">
-				<ProviderBadge {provider} />
+				<ProviderBadge {provider} {model} />
 			</div>
 		</div>
 	</div>

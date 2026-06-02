@@ -123,6 +123,7 @@ class TurnResult:
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     citations: list[str] = field(default_factory=list)
     provider: str = "deterministic"
+    model: str | None = None
     error: str | None = None
     hop_count: int = 0
 
@@ -238,6 +239,7 @@ def run_turn(session, user_text: str) -> TurnResult:
     aggregated_tool_calls: list[dict[str, Any]] = []
     citations: list[str] = []
     provider_used = "unknown"
+    model_used = None
 
     max_hops = getattr(settings, "LLM_MAX_HOPS", 5)
 
@@ -251,17 +253,19 @@ def run_turn(session, user_text: str) -> TurnResult:
             return fb
 
         provider_used = resp.provider
+        model_used = resp.model
 
         if not resp.tool_calls:
             logger.info(
-                "Turn completed in %d hops (provider=%s, tools=%d)",
-                hop + 1, provider_used, len(aggregated_tool_calls),
+                "Turn completed in %d hops (provider=%s, model=%s, tools=%d)",
+                hop + 1, provider_used, model_used, len(aggregated_tool_calls),
             )
             return TurnResult(
                 content=resp.content or "...",
                 tool_calls=aggregated_tool_calls,
                 citations=citations,
                 provider=provider_used,
+                model=model_used,
                 hop_count=hop + 1,
             )
 
@@ -318,6 +322,7 @@ def run_turn(session, user_text: str) -> TurnResult:
         tool_calls=aggregated_tool_calls,
         citations=citations,
         provider=provider_used,
+        model=model_used,
         error="MAX_HOPS_EXCEEDED",
     )
 

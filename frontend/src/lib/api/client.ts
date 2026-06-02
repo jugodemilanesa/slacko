@@ -4,6 +4,7 @@ interface RequestOptions {
 	method?: string;
 	body?: unknown;
 	headers?: Record<string, string>;
+	skipAuthRedirect?: boolean;
 }
 
 function getToken(): string | null {
@@ -23,6 +24,58 @@ export function clearTokens(): void {
 
 export function isAuthenticated(): boolean {
 	return !!getToken();
+}
+
+function translateError(msg: string): string {
+	if (!msg) return '';
+	const lower = msg.toLowerCase();
+	if (lower.includes('no active account found') || lower.includes('no se encontró ninguna cuenta activa')) {
+		return 'Usuario o contraseña incorrectos.';
+	}
+	return msg;
+}
+
+function formatApiError(errorObj: any): string {
+	if (!errorObj) return '';
+	if (typeof errorObj === 'string') return translateError(errorObj);
+	
+	if (errorObj.detail) {
+		if (typeof errorObj.detail === 'string') {
+			return translateError(errorObj.detail);
+		}
+		if (Array.isArray(errorObj.detail)) {
+			return errorObj.detail.map(translateError).join(' ');
+		}
+	}
+
+	const messages: string[] = [];
+	for (const key of Object.keys(errorObj)) {
+		if (key === 'detail') continue;
+		
+		const val = errorObj[key];
+		let fieldName = key;
+		
+		if (key === 'username') fieldName = 'Usuario';
+		else if (key === 'password') fieldName = 'Contraseña';
+		else if (key === 'email') fieldName = 'Email';
+		else if (key === 'non_field_errors') fieldName = '';
+
+		const prefix = fieldName ? `${fieldName}: ` : '';
+		
+		if (Array.isArray(val)) {
+			messages.push(`${prefix}${val.map(translateError).join(' ')}`);
+		} else if (typeof val === 'string') {
+			messages.push(`${prefix}${translateError(val)}`);
+		} else if (typeof val === 'object') {
+			messages.push(`${prefix}${JSON.stringify(val)}`);
+		}
+	}
+
+	if (messages.length > 0) {
+		return messages.join('\n');
+	}
+	
+	return '';
 }
 
 export async function api<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -45,13 +98,16 @@ export async function api<T>(endpoint: string, options: RequestOptions = {}): Pr
 
 	if (response.status === 401) {
 		clearTokens();
-		window.location.href = '/login';
-		throw new Error('No autorizado');
+		if (!options.skipAuthRedirect) {
+			window.location.href = '/login';
+			throw new Error('No autorizado');
+		}
 	}
 
 	if (!response.ok) {
-		const error = await response.json().catch(() => ({}));
-		throw new Error(error.detail || `Error ${response.status}`);
+		const errorObj = await response.json().catch(() => null);
+		const formattedError = errorObj ? formatApiError(errorObj) : '';
+		throw new Error(formattedError || `Error ${response.status}`);
 	}
 
 	return response.json();

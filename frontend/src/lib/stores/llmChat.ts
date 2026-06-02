@@ -36,6 +36,7 @@ export interface LLMChatMessage {
 	role: 'user' | 'assistant';
 	content: string;
 	provider?: string;
+	model?: string;
 	toolCalls?: Message['tool_calls'];
 	citations?: string[];
 	error?: string;
@@ -87,6 +88,7 @@ function fromDb(m: Message): LLMChatMessage {
 		role: m.role,
 		content: m.content,
 		provider: (m.metadata?.provider as string | undefined) ?? undefined,
+		model: (m.metadata?.model as string | undefined) ?? undefined,
 		toolCalls: m.tool_calls,
 		citations: m.citations,
 		error: (m.metadata?.error as string | undefined) ?? undefined,
@@ -156,6 +158,7 @@ export async function start(): Promise<void> {
 					role: 'assistant',
 					content: msg.content,
 					provider: msg.metadata?.provider,
+					model: msg.metadata?.model,
 					toolCalls: msg.tool_calls,
 					citations: msg.citations,
 					error: msg.metadata?.error as string | undefined,

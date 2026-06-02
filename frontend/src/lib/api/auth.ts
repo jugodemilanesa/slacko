@@ -14,7 +14,8 @@ interface User {
 export async function login(username: string, password: string): Promise<void> {
 	const data = await api<LoginResponse>('/auth/login/', {
 		method: 'POST',
-		body: { username, password }
+		body: { username, password },
+		skipAuthRedirect: true
 	});
 	setTokens(data.access, data.refresh);
 }

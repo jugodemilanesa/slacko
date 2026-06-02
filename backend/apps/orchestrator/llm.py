@@ -47,6 +47,7 @@ class LLMResponse:
     tool_calls: list[dict[str, Any]]
     finish_reason: str
     provider: str
+    model: str | None = None
     raw: Any = None
 
 
@@ -187,6 +188,7 @@ def _normalize(response: Any, provider_name: str) -> LLMResponse:
         tool_calls=tool_calls,
         finish_reason=getattr(choice, "finish_reason", "stop"),
         provider=provider_name,
+        model=getattr(response, "model", None),
         raw=response,
     )
 

@@ -30,7 +30,7 @@
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}
-				<div class="p-3 text-sm text-error bg-error/10 border border-error/20 rounded">{error}</div>
+				<div class="p-3 text-sm text-error bg-error/10 border border-error/20 rounded whitespace-pre-line">{error}</div>
 			{/if}
 
 			<div>

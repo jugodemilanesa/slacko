@@ -48,6 +48,14 @@
 		return undefined;
 	});
 
+	const lastAssistantModel = $derived.by(() => {
+		const arr = $messages;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].role === 'assistant' && arr[i].model) return arr[i].model;
+		}
+		return undefined;
+	});
+
 	const hasMessages = $derived($messages.length > 0);
 
 	const statusBadge = $derived.by(() => {
@@ -163,7 +171,7 @@
 				</div>
 
 				<div class="lh-right">
-					<ProviderBadge provider={lastAssistantProvider} />
+					<ProviderBadge provider={lastAssistantProvider} model={lastAssistantModel} />
 					<button type="button" class="lh-btn ghost" onclick={newChat} title="Empezar un chat nuevo">
 						<span class="btn-glyph">+</span>
 						Nuevo chat
@@ -359,11 +367,7 @@
 		top: 0;
 		z-index: 5;
 		padding: 0.55rem 1.5rem;
-		background: linear-gradient(
-			to bottom,
-			rgba(250, 249, 247, 0.96),
-			rgba(250, 249, 247, 0.85)
-		);
+		background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
 		border-bottom: 1px solid var(--color-bot-border);
@@ -401,7 +405,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		transition: all 0.15s ease;
 		flex-shrink: 0;
 	}
 
@@ -520,7 +523,6 @@
 		padding: 0.42rem 0.9rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.18s ease;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
@@ -620,23 +622,22 @@
 		font-family: var(--font-display);
 		font-size: clamp(1.9rem, 3vw, 2.4rem);
 		line-height: 1.1;
-		color: var(--color-ink);
 		margin: 0 0 0.5rem 0;
 		font-weight: 400;
-	}
-
-	.hero-title em {
-		font-style: italic;
 		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
 		-webkit-background-clip: text;
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
 		color: transparent;
+		display: inline-block;
+	}
+
+	.hero-title em {
+		font-style: italic;
 	}
 
 	.hero-title .drop {
 		font-style: italic;
-		color: var(--color-accent);
 		font-size: 1.2em;
 	}
 
@@ -697,7 +698,6 @@
 		color: var(--color-ink);
 		text-align: left;
 		cursor: pointer;
-		transition: all 0.18s ease;
 		line-height: 1.45;
 		width: 100%;
 	}
@@ -722,7 +722,7 @@
 		margin-left: auto;
 		font-family: var(--font-display);
 		color: var(--color-ink-muted);
-		transition: transform 0.18s ease, color 0.18s ease;
+		transition: transform 0.18s ease;
 		flex-shrink: 0;
 	}
 
@@ -892,7 +892,6 @@
 		border: 1px solid var(--color-bot-border);
 		border-radius: 18px;
 		padding: 0.6rem 0.6rem 0.6rem 1rem;
-		transition: border-color 0.18s ease, box-shadow 0.18s ease;
 	}
 
 	.composer-box:focus-within {
@@ -937,7 +936,6 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.18s ease;
 		flex-shrink: 0;
 	}
 

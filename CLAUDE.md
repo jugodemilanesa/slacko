@@ -91,7 +91,8 @@ SvelteKit → (REST/WS) → Django → Orchestrator (LLM + tools)
 
 ```
 START → SELECT_MODE
-  ├→ GUIDED
+  ├→ LLM_CHAT (Chat libre)
+  ├→ GUIDED (Paso a paso)
   │    ├→ INPUT_ENUNCIADO
   │    ├→ CLASSIFY_SCENARIO
   │    ├→ DEFINE_VARIABLES
@@ -101,11 +102,8 @@ START → SELECT_MODE
   │    ├→ CONVERT_FORMS
   │    ├→ SOLVE_AND_GRAPH
   │    └→ INTERPRET
-  └→ FREE
-       ├→ INPUT_MODEL
-       ├→ PARSE_AND_VALIDATE
-       ├→ SOLVE_AND_GRAPH
-       └→ INTERPRET
+  ├→ THEORY_QUERY (Consulta teórica)
+  └→ TUTORIAL (Tutorial)
 ```
 
 ## Modelo de datos interno (LP Model)

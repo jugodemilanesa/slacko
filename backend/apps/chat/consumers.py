@@ -130,7 +130,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
             return
 
-        metadata = {"provider": turn.provider}
+        metadata = {
+            "provider": turn.provider,
+            "model": turn.model,
+        }
         if turn.error:
             metadata["error"] = turn.error
 

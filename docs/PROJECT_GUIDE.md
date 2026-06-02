@@ -48,7 +48,7 @@ inv-op/
 ├── frontend/                   # SvelteKit SPA
 │   └── src/
 │       ├── lib/api/            # Cliente HTTP con JWT, funciones de auth
-│       ├── lib/stores/         # Svelte stores (auth state)
+│       ├── lib/stores/         # Svelte stores (auth, chat, theme, etc.)
 │       ├── lib/components/     # Componentes reutilizables
 │       └── routes/             # Páginas: login, register, chat
 ├── data/
@@ -99,10 +99,12 @@ Frontend (SvelteKit) → REST API / WebSocket → Django Orchestrator (LLM + too
 El modo guiado sigue una secuencia de estados que se persisten en `Session.state` (`apps/chat/models.py`). El orquestador transiciona vía la tool `start_guided_mode`:
 
 ```
-START → SELECT_MODE → GUIDED | FREE
-  GUIDED: INPUT_ENUNCIADO → CLASSIFY_SCENARIO → DEFINE_VARIABLES → DEFINE_OBJECTIVE
-          → BUILD_CONSTRAINTS → VALIDATE_MODEL → CONVERT_FORMS → SOLVE_AND_GRAPH → INTERPRET
-  FREE:   INPUT_MODEL → PARSE_AND_VALIDATE → SOLVE_AND_GRAPH → INTERPRET
+START → SELECT_MODE
+  ├→ LLM_CHAT (Chat libre)
+  ├→ GUIDED: INPUT_ENUNCIADO → CLASSIFY_SCENARIO → DEFINE_VARIABLES → DEFINE_OBJECTIVE
+  │          → BUILD_CONSTRAINTS → VALIDATE_MODEL → CONVERT_FORMS → SOLVE_AND_GRAPH → INTERPRET
+  ├→ THEORY_QUERY (Consulta teórica)
+  └→ TUTORIAL (Tutorial)
 ```
 
 ### Modelo LP interno (contrato entre módulos)
@@ -228,8 +230,7 @@ Ver `CLAUDE.md` en la raíz del proyecto para la guía completa.
 
 ## Qué queda por implementar
 
-> Última actualización: 2026-05-21, tras integrar frontend del modo LLM,
-> rate limiter, defensa contra prompt injection y cherry-pick multi-provider.
+> Última actualización: 2026-06-01, tras agregar modo oscuro y mejorar la UI del menú principal.
 
 ### Prioridad alta — cerrar el ciclo del modo LLM
 1. **Verificación E2E en browser** — abrir `http://localhost:5173`, loguearse,
