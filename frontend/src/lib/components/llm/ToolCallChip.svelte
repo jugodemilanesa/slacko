@@ -50,7 +50,6 @@
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		color: var(--color-ink-light);
-		transition: all 0.18s ease;
 		line-height: 1.4;
 		white-space: nowrap;
 	}

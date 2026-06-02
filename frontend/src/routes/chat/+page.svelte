@@ -505,7 +505,7 @@
 							<div class="relative z-10 h-[96px] flex items-end justify-center shrink-0">
 								<div class="w-full max-w-[90vw] md:max-w-4xl lg:max-w-5xl flex justify-start">
 									{#each $messages as msg (msg.id)}
-										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={$currentState === 'SELECT_MODE'} />
 									{/each}
 
 									{#if $assistantThinking}
@@ -516,7 +516,7 @@
 						{:else}
 							<!-- Rendered messages (con expresión por mensaje) -->
 							{#each $messages as msg (msg.id)}
-								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={$currentState === 'SELECT_MODE'} />
 							{/each}
 
 							<!-- Indicador de tipeo mientras Slacko 'piensa' -->

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.bubble {
+    display: inline-block;
+    max-width: 200px;
+    background: #eee;
+    padding: 10px;
+    font-family: sans-serif;
+}
+</style>
+</head>
+<body>
+<div class="bubble" id="b"></div>
+<script>
+const text = "Hola! Soy Slacko, tu tutor de Programacion Lineal.";
+let b = document.getElementById('b');
+let i = 0;
+setInterval(() => {
+    if (i <= text.length) {
+        b.innerText = text.slice(0, i);
+        i++;
+    }
+}, 100);
+</script>
+</body>
+</html>

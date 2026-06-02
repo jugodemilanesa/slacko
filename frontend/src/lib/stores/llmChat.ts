@@ -41,6 +41,7 @@ export interface LLMChatMessage {
 	citations?: string[];
 	error?: string;
 	createdAt: string;
+	animate?: boolean;
 }
 
 export const session = writable<SessionSummary | null>(null);
@@ -162,7 +163,8 @@ export async function start(): Promise<void> {
 					toolCalls: msg.tool_calls,
 					citations: msg.citations,
 					error: msg.metadata?.error as string | undefined,
-					createdAt: new Date().toISOString()
+					createdAt: new Date().toISOString(),
+					animate: true
 				}
 			]);
 			status.set('open');

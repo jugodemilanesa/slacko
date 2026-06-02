@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { rollShiny } from '$lib/stores/shiny';
 	import '../app.css';
 	import '$lib/stores/theme';
 
@@ -10,6 +12,10 @@
 			document.body.classList.remove('preload');
 		}, 100);
 		return () => clearTimeout(t);
+	});
+
+	afterNavigate(() => {
+		rollShiny();
 	});
 </script>
 

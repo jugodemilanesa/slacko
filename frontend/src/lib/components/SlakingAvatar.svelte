@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { isDarkMode } from '$lib/stores/theme';
+	import { isShinyStore } from '$lib/stores/shiny';
 
 	type Expression = 'idle' | 'thinking' | 'happy' | 'sad' | 'explain';
 	type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -30,8 +31,8 @@
 
 	const pixelSize = $derived(typeof size === 'number' ? size : SIZE_MAP[size]);
 	
-	// Use the animated Slaking GIF
-	const src = '/slaking/slaking.gif';
+	// Use the animated Slaking GIF (1% chance to be shiny per page/chat load)
+	const src = $derived($isShinyStore ? '/slaking/slaking-shiny.gif' : '/slaking/slaking.gif');
 </script>
 
 <div

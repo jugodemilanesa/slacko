@@ -5,7 +5,7 @@
 <div class="flex items-end gap-2 justify-start fade-in" aria-label="Slacko está escribiendo">
 	<SlakingAvatar expression="thinking" size="sm" ring />
 	<div
-		class="bg-bot-bg border border-bot-border rounded-2xl rounded-bl-md shadow-sm
+		class="bg-bot-bg border border-bot-border rounded-2xl shadow-sm
 			px-4 py-3 flex items-center gap-1"
 	>
 		<span class="dot"></span>

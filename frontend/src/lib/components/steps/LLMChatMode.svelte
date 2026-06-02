@@ -12,6 +12,7 @@
 		lastError,
 		session,
 		isThinking,
+		isLive,
 		start,
 		send,
 		reset
@@ -247,24 +248,31 @@
 				</section>
 			{:else}
 				<!-- Message stack -->
-				{#each $messages as msg (msg.id)}
+				{#each $messages as msg, i (msg.id)}
 					<ChatBubbleLLM
 						role={msg.role}
 						content={msg.content}
 						provider={msg.provider}
 						toolCalls={msg.toolCalls}
 						citations={msg.citations}
+						isLast={i === $messages.length - 1}
+						hideTrack={i === $messages.length - 1}
+						isLive={$isLive}
 						error={msg.error}
 					/>
 				{/each}
 
 				{#if $isThinking}
 					<div class="thinking">
-						<SlakingAvatar expression="thinking" size="sm" />
-						<div class="typing">
-							<span></span><span></span><span></span>
+						<div class="thinking-marginalia">
+							<SlakingAvatar expression="thinking" size="sm" />
 						</div>
-						<span class="thinking-label"><em>Slacko</em> está pensando…</span>
+						<div class="typing-wrapper">
+							<div class="typing">
+								<span></span><span></span><span></span>
+							</div>
+							<span class="thinking-label"><em>Slacko</em> está pensando…</span>
+						</div>
 					</div>
 				{/if}
 			{/if}
@@ -754,35 +762,62 @@
 	/* Thinking indicator -------------------------------------------------- */
 	.thinking {
 		display: grid;
-		grid-template-columns: 48px auto auto;
-		gap: 0.65rem;
+		grid-template-columns: 48px 1fr;
+		gap: 0.55rem 1rem;
 		align-items: center;
 		animation: fadeUp 0.25s ease-out;
 	}
 
+	.thinking-marginalia {
+		grid-column: 1;
+		display: flex;
+		justify-content: center;
+	}
+
+	.typing-wrapper {
+		grid-column: 2;
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
 	.typing {
 		display: inline-flex;
-		gap: 6px;
-		padding: 0.7rem 0.95rem;
+		align-items: center;
+		gap: 4px;
+		padding: 0.75rem 1rem;
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
-		border-radius: 14px 14px 14px 4px;
+		border-radius: 16px;
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 		width: fit-content;
 	}
 
 	.typing span {
-		width: 7px;
-		height: 7px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: var(--color-ink-muted);
-		animation: bounce 1.2s infinite ease-in-out both;
+		opacity: 0.5;
+		animation: typingBounce 1s infinite ease-in-out;
 	}
 
 	.typing span:nth-child(2) {
-		animation-delay: 0.15s;
+		animation-delay: 150ms;
 	}
 	.typing span:nth-child(3) {
-		animation-delay: 0.3s;
+		animation-delay: 300ms;
+	}
+
+	@keyframes typingBounce {
+		0%, 80%, 100% {
+			transform: translateY(0);
+			opacity: 0.4;
+		}
+		40% {
+			transform: translateY(-4px);
+			opacity: 1;
+		}
 	}
 
 	.thinking-label {

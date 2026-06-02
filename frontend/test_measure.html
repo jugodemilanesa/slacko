@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.flex-row {
+    display: flex;
+    position: relative;
+    width: 600px;
+    background: #eee;
+    margin-bottom: 20px;
+}
+.hidden-measure {
+    position: absolute;
+    visibility: hidden;
+    max-width: 75%;
+    padding: 10px;
+    font-family: sans-serif;
+    display: inline-block;
+}
+.real-bubble {
+    max-width: 75%;
+    padding: 10px;
+    font-family: sans-serif;
+    background: lightblue;
+    display: inline-block;
+}
+</style>
+</head>
+<body>
+<div class="flex-row">
+    <div class="hidden-measure" id="hm">Hola mundo esto es una prueba para ver si el salto de linea y el calculo de max-width 75% coinciden perfectamente.</div>
+    <div class="real-bubble" id="rb"></div>
+</div>
+<script>
+const text = "Hola mundo esto es una prueba para ver si el salto de linea y el calculo de max-width 75% coinciden perfectamente.";
+let hm = document.getElementById('hm');
+let rb = document.getElementById('rb');
+let finalWidth = hm.getBoundingClientRect().width;
+rb.style.width = finalWidth + 'px';
+
+let i = 0;
+setInterval(() => {
+    if (i <= text.length) {
+        rb.innerText = text.slice(0, i);
+        i++;
+    }
+}, 30);
+</script>
+</body>
+</html>

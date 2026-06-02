@@ -119,7 +119,6 @@
 		font-family: var(--font-body);
 		font-size: 0.75rem;
 		cursor: pointer;
-		transition: all 0.18s ease;
 		line-height: 1.4;
 		white-space: nowrap;
 	}

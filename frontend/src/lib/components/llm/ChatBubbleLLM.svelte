@@ -17,7 +17,8 @@
 		model,
 		toolCalls = [],
 		citations = [],
-		error
+		error = null,
+		hideTrack = false
 	}: {
 		role: 'user' | 'assistant';
 		content: string;
@@ -25,12 +26,13 @@
 		model?: string;
 		toolCalls?: ChatToolCall[];
 		citations?: string[];
-		error?: string;
+		error?: string | null;
+		hideTrack?: boolean;
 	} = $props();
 
 	marked.setOptions({ gfm: true, breaks: false });
 
-	const renderedHtml = $derived(role === 'assistant' ? (marked.parse(content) as string) : '');
+	const renderedHtml = $derived(role === 'assistant' ? (marked.parse(content || '') as string) : '');
 
 	// Artifact selection: show ParseProblem artifact for any successful parse,
 	// SolveLp artifact for any successful solve/graph. Multiple artifacts in
@@ -47,7 +49,10 @@
 </script>
 
 {#if role === 'user'}
-	<div class="turn user-turn">
+	<div class="turn user-turn" class:is-last={hideTrack}>
+		{#if !hideTrack}
+			<div class="user-track" aria-hidden="true"></div>
+		{/if}
 		<div class="user-bubble">
 			<div class="user-meta">
 				<span>Vos</span>
@@ -56,13 +61,13 @@
 		</div>
 	</div>
 {:else}
-	<div class="turn bot-turn" class:has-error={!!error}>
+	<div class="turn bot-turn" class:has-error={!!error} class:is-last={hideTrack}>
 		<div class="marginalia" aria-hidden="true">
 			<SlakingAvatar expression={error ? 'sad' : 'explain'} size="sm" />
 			<span class="spine"></span>
 		</div>
 
-		<div class="bot-body">
+		<div class="bot-content">
 			{#if error}
 				<div class="err-banner" role="alert">
 					<div class="err-overline">Falla del LLM — respondí con el matcher determinístico</div>
@@ -73,7 +78,13 @@
 			<div class="bubble">
 				<div class="prose">{@html renderedHtml}</div>
 			</div>
+		</div>
 
+		{#if !hideTrack}
+			<div class="bot-track" aria-hidden="true"></div>
+		{/if}
+
+		<div class="bot-accessories">
 			{#if toolCalls.length > 0}
 				<div class="chips">
 					{#each toolCalls as tool, i (i)}
@@ -120,6 +131,26 @@
 	.user-turn {
 		display: flex;
 		justify-content: flex-end;
+		position: relative;
+	}
+
+	.user-track {
+		position: absolute;
+		top: 0;
+		bottom: -1.5rem;
+		left: 23px; /* 24px center - 1px half-width = 23px */
+		width: 2px;
+		background: var(--color-primary);
+		-webkit-mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+		-webkit-mask-size: 2px 16px;
+		mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+		mask-size: 2px 16px;
+		opacity: 0.5;
+		z-index: 0;
+	}
+
+	:global(.dark) .user-track {
+		background: var(--color-accent);
 	}
 
 	.user-bubble {
@@ -159,54 +190,134 @@
 	.bot-turn {
 		display: grid;
 		grid-template-columns: 48px 1fr;
-		gap: 1rem;
-		align-items: flex-start;
+		gap: 0.55rem 1rem;
+		align-items: stretch;
+		position: relative;
 	}
 
 	.marginalia {
+		grid-column: 1;
+		grid-row: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.4rem;
 		padding-top: 0.3rem;
+		position: relative;
+		z-index: 1;
 	}
 
 	/* The spine is the gradient indigo→gold mentioned in the brief — it sits
 	   below the avatar and visually signals "LLM with curated grounding". */
 	.spine {
-		width: 1.5px;
+		width: 2px;
 		flex: 1;
 		min-height: 36px;
+		margin-bottom: 10px; /* 6px shift + 4px to reach dot center */
 		background: linear-gradient(
 			180deg,
 			var(--color-primary),
-			color-mix(in srgb, var(--color-primary) 50%, var(--color-accent)) 50%,
-			var(--color-accent) 80%,
-			transparent
+			var(--color-accent)
 		);
 		opacity: 0.65;
 		border-radius: 1px;
+		position: relative;
+		z-index: -1;
 	}
 
-	.bot-body {
+	:global(.dark) .spine {
+		background: linear-gradient(
+			180deg,
+			var(--color-accent),
+			var(--color-primary)
+		);
+	}
+
+	.marginalia::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: 6px;
+		width: 8px;
+		height: 8px;
+		background: var(--color-accent);
+		border-radius: 50%;
+		transform: translateX(-50%);
+		box-shadow: 0 0 8px var(--color-accent);
+		opacity: 0.9;
+		z-index: 2;
+	}
+
+	:global(.dark) .marginalia::after {
+		background: var(--color-primary);
+		box-shadow: 0 0 6px var(--color-primary);
+	}
+
+	.bot-content {
+		grid-column: 2;
+		grid-row: 1;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 0.55rem;
 	}
 
+	.bot-accessories {
+		grid-column: 2;
+		grid-row: 2;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	.bot-track {
+		grid-column: 1;
+		grid-row: 2;
+		position: relative;
+	}
+
+	.bot-track::after {
+		content: '';
+		position: absolute;
+		top: calc(-0.55rem - 10px); /* Starts exactly at the center of the shifted dot */
+		bottom: -1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 2px;
+		background: linear-gradient(180deg, var(--color-accent), var(--color-primary));
+		-webkit-mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+		-webkit-mask-size: 2px 16px;
+		mask-image: linear-gradient(to bottom, transparent 50%, black 50%);
+		mask-size: 2px 16px;
+		opacity: 0.5;
+		z-index: 0;
+	}
+
+	:global(.dark) .bot-track::after {
+		background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+	}
+
+	/* Force hide tracks if it's the last message */
+	.is-last .user-track,
+	.is-last .bot-track,
+	:global(.lh-column > .turn:last-child .user-track),
+	:global(.lh-column > .turn:last-child .bot-track) {
+		display: none !important;
+	}
+
 	/* Bubble --------------------------------------------------------------- */
 	.bubble {
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
-		border-radius: 14px 14px 14px 4px;
+		border-radius: 14px;
 		padding: 0.85rem 1.15rem 0.95rem 1.15rem;
 		box-shadow: 0 1px 0 rgba(26, 26, 46, 0.02);
 	}
 
 	.bot-turn.has-error .bubble {
 		border-left: 3px solid var(--color-error);
-		border-radius: 14px 14px 14px 0;
+		border-radius: 14px;
 	}
 
 	/* Prose styling — mirrors MarkdownBody but a tone tighter for chat ---- */
