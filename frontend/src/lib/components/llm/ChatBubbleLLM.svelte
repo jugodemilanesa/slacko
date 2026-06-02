@@ -18,7 +18,8 @@
 		toolCalls = [],
 		citations = [],
 		error = null,
-		hideTrack = false
+		hideTrack = false,
+		animate = false
 	}: {
 		role: 'user' | 'assistant';
 		content: string;
@@ -28,11 +29,87 @@
 		citations?: string[];
 		error?: string | null;
 		hideTrack?: boolean;
+		animate?: boolean;
 	} = $props();
+
+	import { onMount } from 'svelte';
 
 	marked.setOptions({ gfm: true, breaks: false });
 
-	const renderedHtml = $derived(role === 'assistant' ? (marked.parse(content || '') as string) : '');
+	let displayedHtml = $state('');
+	let progress = $state(0);
+	let finalHeight = $state<number | null>(null);
+
+	onMount(() => {
+		const r = role;
+		const c = content;
+		const a = animate;
+		
+		const parsed = r === 'assistant' ? (marked.parse(c || '') as string) : '';
+		
+		if (a && r === 'assistant') {
+			let tokens: string[] = [];
+			let i = 0;
+			while (i < parsed.length) {
+				if (parsed[i] === '<') {
+					let start = i;
+					while (i < parsed.length && parsed[i] !== '>') i++;
+					tokens.push(parsed.slice(start, i + 1));
+					i++;
+				} else if (parsed[i] === '&') {
+					let start = i;
+					while (i < parsed.length && parsed[i] !== ';') i++;
+					tokens.push(parsed.slice(start, i + 1));
+					i++;
+				} else {
+					let char = String.fromCodePoint(parsed.codePointAt(i) || parsed.charCodeAt(i));
+					tokens.push(char);
+					if (char.length > 1) i += char.length;
+					else i++;
+				}
+			}
+
+			let length = 0;
+			let html = '';
+			
+			// Si el primer token es un tag, agregarlo instantáneamente
+			while (length < tokens.length && tokens[length].startsWith('<')) {
+				html += tokens[length];
+				length++;
+			}
+			displayedHtml = html;
+			progress = tokens.length > 0 ? length / tokens.length : 1;
+
+			const speed = 180; // chars por segundo
+			const startTime = Date.now();
+			
+			const interval = setInterval(() => {
+				const elapsed = (Date.now() - startTime) / 1000;
+				const targetLength = Math.floor(elapsed * speed);
+
+				while (length < targetLength && length < tokens.length) {
+					html += tokens[length];
+					length++;
+					while (length < tokens.length && tokens[length].startsWith('<')) {
+						html += tokens[length];
+						length++;
+					}
+				}
+
+				displayedHtml = html;
+				progress = tokens.length > 0 ? length / tokens.length : 1;
+				
+				if (length >= tokens.length) {
+					progress = 1;
+					clearInterval(interval);
+				}
+			}, 16);
+
+			return () => clearInterval(interval);
+		} else {
+			displayedHtml = parsed;
+		}
+	});
 
 	// Artifact selection: show ParseProblem artifact for any successful parse,
 	// SolveLp artifact for any successful solve/graph. Multiple artifacts in
@@ -75,8 +152,16 @@
 				</div>
 			{/if}
 
-			<div class="bubble">
-				<div class="prose">{@html renderedHtml}</div>
+			<div style="position: relative; width: 100%;">
+				{#if animate && role === 'assistant' && progress < 1}
+					<div class="bubble" style="position: absolute; visibility: hidden; pointer-events: none; width: 100%; top: 0; left: 0;" aria-hidden="true" bind:clientHeight={finalHeight}>
+						<div class="prose">{@html parsed}</div>
+					</div>
+				{/if}
+
+				<div class="bubble" style={animate && progress < 1 && finalHeight ? `height: ${54 + (finalHeight - 54) * progress}px; overflow: hidden;` : ''}>
+					<div class="prose">{@html displayedHtml}</div>
+				</div>
 			</div>
 		</div>
 
@@ -137,7 +222,7 @@
 	.user-track {
 		position: absolute;
 		top: 0;
-		bottom: -1.5rem;
+		bottom: calc(-1.5rem - 0.3rem - 16px); /* Reaches the center of the bot avatar below */
 		left: 23px; /* 24px center - 1px half-width = 23px */
 		width: 2px;
 		background: var(--color-primary);
@@ -304,6 +389,12 @@
 	:global(.lh-column > .turn:last-child .user-track),
 	:global(.lh-column > .turn:last-child .bot-track) {
 		display: none !important;
+	}
+
+	/* The very first track should extend upwards infinitely for overscroll */
+	:global(.lh-column > .turn:first-child .user-track),
+	:global(.lh-column > .turn:first-child .bot-track::after) {
+		top: -100vh;
 	}
 
 	/* Bubble --------------------------------------------------------------- */

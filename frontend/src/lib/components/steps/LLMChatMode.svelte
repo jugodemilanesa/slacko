@@ -155,11 +155,6 @@
 					>
 						<span aria-hidden="true">☰</span>
 					</button>
-					<span class="chip">
-						<span class="chip-rail" aria-hidden="true"></span>
-						<span class="chip-glyph" aria-hidden="true">∞</span>
-						Modo conversación
-					</span>
 					{#if $session?.title}
 						<span class="title">{$session.title}</span>
 					{/if}
@@ -255,10 +250,9 @@
 						provider={msg.provider}
 						toolCalls={msg.toolCalls}
 						citations={msg.citations}
-						isLast={i === $messages.length - 1}
-						hideTrack={i === $messages.length - 1}
-						isLive={$isLive}
+						hideTrack={i === $messages.length - 1 && !$isThinking}
 						error={msg.error}
+						animate={msg.animate}
 					/>
 				{/each}
 
@@ -271,7 +265,6 @@
 							<div class="typing">
 								<span></span><span></span><span></span>
 							</div>
-							<span class="thinking-label"><em>Slacko</em> está pensando…</span>
 						</div>
 					</div>
 				{/if}
@@ -473,7 +466,6 @@
 
 	.title {
 		font-family: var(--font-display);
-		font-style: italic;
 		font-size: 0.92rem;
 		color: var(--color-ink);
 		max-width: 320px;
