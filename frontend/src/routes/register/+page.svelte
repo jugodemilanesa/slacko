@@ -24,60 +24,60 @@
 	}
 </script>
 
-<div class="flex items-center justify-center min-h-screen">
-	<div class="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-		<h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Registrarse</h1>
+<div class="flex items-center justify-center min-h-screen bg-surface">
+	<div class="w-full max-w-md p-8 bg-surface-card rounded-lg shadow-lg border border-bot-border">
+		<h1 class="text-3xl font-bold text-center text-ink mb-6 font-display">Registrarse</h1>
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}
-				<div class="p-3 text-sm text-red-700 bg-red-100 rounded">{error}</div>
+				<div class="p-3 text-sm text-error bg-error/10 border border-error/20 rounded">{error}</div>
 			{/if}
 
 			<div>
-				<label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
+				<label for="username" class="block text-sm font-medium text-ink-light">Usuario</label>
 				<input
 					id="username"
 					type="text"
 					bind:value={username}
 					required
-					class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
 				/>
 			</div>
 
 			<div>
-				<label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+				<label for="email" class="block text-sm font-medium text-ink-light">Email</label>
 				<input
 					id="email"
 					type="email"
 					bind:value={email}
 					required
-					class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
 				/>
 			</div>
 
 			<div>
-				<label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+				<label for="password" class="block text-sm font-medium text-ink-light">Contraseña</label>
 				<input
 					id="password"
 					type="password"
 					bind:value={password}
 					required
 					minlength={6}
-					class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
 				/>
 			</div>
 
 			<button
 				type="submit"
 				disabled={loading}
-				class="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+				class="w-full py-2 px-4 bg-primary text-white font-medium rounded-md hover:bg-primary-light transition-colors cursor-pointer disabled:opacity-50"
 			>
 				{loading ? 'Registrando...' : 'Crear cuenta'}
 			</button>
 		</form>
 
-		<p class="mt-4 text-center text-sm text-gray-500">
-			Ya tenes cuenta? <a href="/login" class="text-blue-600 hover:underline">Ingresa</a>
+		<p class="mt-6 text-center text-sm text-ink-muted">
+			¿Ya tenés cuenta? <a href="/login" class="text-primary hover:text-primary-light hover:underline font-medium">Ingresá</a>
 		</p>
 	</div>
 </div>

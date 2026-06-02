@@ -55,7 +55,7 @@
 	<!-- 2. Paso a paso (deterministic guided flow) -->
 	<button
 		onclick={selectGuided}
-		class="w-full p-5 rounded-xl border-2 border-primary/20 bg-white hover:border-primary hover:shadow-md
+		class="w-full p-5 rounded-xl border-2 border-primary/20 bg-surface-card hover:border-primary hover:shadow-md
 			transition-all text-left group cursor-pointer"
 	>
 		<div class="flex items-center gap-3">
@@ -74,7 +74,7 @@
 	<!-- 3. Consulta teórica -->
 	<button
 		onclick={selectTheory}
-		class="w-full p-5 rounded-xl border-2 border-accent/30 bg-white hover:border-accent hover:shadow-md
+		class="w-full p-5 rounded-xl border-2 border-accent/30 bg-surface-card hover:border-accent hover:shadow-md
 			transition-all text-left group cursor-pointer"
 	>
 		<div class="flex items-center gap-3">
@@ -94,7 +94,7 @@
 	<!-- 4. Tutorial -->
 	<button
 		onclick={selectTutorial}
-		class="w-full p-5 rounded-xl border-2 border-ink/15 bg-white hover:border-ink hover:shadow-md
+		class="w-full p-5 rounded-xl border-2 border-ink/15 bg-surface-card hover:border-ink hover:shadow-md
 			transition-all text-left group cursor-pointer"
 	>
 		<div class="flex items-center gap-3">

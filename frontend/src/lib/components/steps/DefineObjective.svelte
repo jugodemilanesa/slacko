@@ -21,7 +21,7 @@
 	<div class="grid grid-cols-2 gap-3">
 		<button
 			onclick={() => select('maximize')}
-			class="p-5 rounded-xl border-2 border-success/20 bg-white hover:border-success hover:shadow-md
+			class="p-5 rounded-xl border-2 border-success/20 bg-surface-card hover:border-success hover:shadow-md
 				transition-all text-center group cursor-pointer"
 		>
 			<div class="text-3xl mb-2">↑</div>
@@ -31,7 +31,7 @@
 
 		<button
 			onclick={() => select('minimize')}
-			class="p-5 rounded-xl border-2 border-warning/20 bg-white hover:border-warning hover:shadow-md
+			class="p-5 rounded-xl border-2 border-warning/20 bg-surface-card hover:border-warning hover:shadow-md
 				transition-all text-center group cursor-pointer"
 		>
 			<div class="text-3xl mb-2">↓</div>

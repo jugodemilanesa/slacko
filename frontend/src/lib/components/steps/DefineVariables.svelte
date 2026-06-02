@@ -71,7 +71,7 @@
 					type="text"
 					bind:value={var1Label}
 					placeholder="ej: balones"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white
+					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
 			</div>
@@ -86,7 +86,7 @@
 					placeholder="ej: 2"
 					step="any"
 					inputmode="decimal"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white font-mono
+					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink font-mono
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
 			</div>
@@ -104,7 +104,7 @@
 					type="text"
 					bind:value={var2Label}
 					placeholder="ej: ajedrez"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white
+					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
 			</div>
@@ -119,7 +119,7 @@
 					placeholder="ej: 4"
 					step="any"
 					inputmode="decimal"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-white font-mono
+					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink font-mono
 						focus:outline-none focus:ring-2 focus:ring-primary/30"
 				/>
 			</div>

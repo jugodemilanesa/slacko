@@ -89,3 +89,67 @@ body {
 .fade-in {
 	animation: fadeIn 0.3s ease-out;
 }
+
+/* Dark theme overrides */
+.dark {
+	--color-ink: #f0f0f5;
+	--color-ink-light: #b0b0cc;
+	--color-ink-muted: #757593;
+
+	--color-surface: #0b0b14;
+	--color-surface-warm: #171728;
+	--color-surface-card: #121220;
+
+	--color-sidebar: #0b0b14;
+	--color-sidebar-light: #171728;
+
+	--color-accent: #e8c97a;
+	--color-accent-light: #f3dfaa;
+
+	--color-primary: #5263e7;
+	--color-primary-light: #7a8af5;
+	--color-primary-dark: #3747b8;
+
+	--color-success: #34c78c;
+	--color-warning: #ffa63d;
+	--color-error: #ff5c5c;
+
+	--color-bot-bg: #121220;
+	--color-bot-border: #22223b;
+	--color-user-bg: #5263e7;
+	--color-user-text: #ffffff;
+}
+
+/* Global transitions for theme changes (fadein/fadeout) */
+body,
+header,
+aside,
+main,
+footer,
+div,
+p,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+button,
+input,
+textarea,
+select,
+label,
+svg,
+circle,
+path {
+	transition-property: background-color, border-color, color, text-decoration-color, fill, stroke, box-shadow;
+	transition-duration: 0.25s;
+	transition-timing-function: ease-in-out;
+}
+
+/* Background crossfade container transition matching exactly the theme transition */
+.bg-crossfade-container {
+	transition: opacity 0.25s ease-in-out;
+}

@@ -34,7 +34,7 @@
 		onkeydown={handleKeydown}
 		placeholder="Pegá o escribí el enunciado del problema acá..."
 		rows={5}
-		class="w-full px-4 py-3 rounded-xl border border-bot-border bg-white text-ink text-sm
+		class="w-full px-4 py-3 rounded-xl border border-bot-border bg-surface-card text-ink text-sm
 			resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
 			placeholder:text-ink-muted/50"
 	></textarea>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { isDarkMode } from '$lib/stores/theme';
+
 	type Expression = 'idle' | 'thinking' | 'happy' | 'sad' | 'explain';
 	type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -34,7 +36,7 @@
 
 <div
 	class="shrink-0 select-none overflow-hidden rounded-full flex items-center justify-center
-		{ring ? 'ring-2 ring-bot-border mb-[-10px]' : ''}
+		{ring ? `ring-2 ${$isDarkMode ? 'ring-accent' : 'ring-primary'} mb-[-10px]` : ''}
 		{floating ? 'animate-[float_3s_ease-in-out_infinite]' : ''}
 		{className}"
 	style="width: {pixelSize}px; height: {pixelSize}px; background: {ring ? 'linear-gradient(135deg, #a5b4fc, #fde047)' : 'transparent'};"

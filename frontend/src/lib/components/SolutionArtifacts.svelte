@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import type { LPModel, SolverResult } from '$lib/stores/chat';
+	import { isDarkMode } from '$lib/stores/theme';
 
 	let {
 		model,
@@ -81,6 +82,14 @@
 			});
 		}
 
+		const dark = $isDarkMode;
+		const inkColor = dark ? '#f0f0f5' : '#1a1a2e';
+		const inkLightColor = dark ? '#b0b0cc' : '#4a4a6a';
+		const gridColor = dark ? '#22223b' : '#e5e2dc';
+		const plotBg = dark ? '#121220' : '#faf9f7';
+		const legendBg = dark ? 'rgba(18, 18, 32, 0.9)' : 'rgba(255,255,255,0.9)';
+		const primaryColor = dark ? '#7a8af5' : '#3b4cc0';
+
 		traces.push({
 			x: result.feasible_vertices.map((p) => p[0]),
 			y: result.feasible_vertices.map((p) => p[1]),
@@ -88,8 +97,8 @@
 			name: 'Vértices factibles',
 			text: result.feasible_vertices.map((p) => `(${fmt(p[0])}, ${fmt(p[1])})`),
 			textposition: 'top center',
-			textfont: { size: 10, family: 'JetBrains Mono', color: '#4a4a6a' },
-			marker: { color: '#3b4cc0', size: 8 }
+			textfont: { size: 10, family: 'JetBrains Mono', color: inkLightColor },
+			marker: { color: primaryColor, size: 8 }
 		});
 
 		if (result.optimal_point) {
@@ -102,7 +111,7 @@
 					color: '#d4a853',
 					size: 14,
 					symbol: 'star',
-					line: { width: 2, color: '#1a1a2e' }
+					line: { width: 2, color: dark ? '#0b0b14' : '#1a1a2e' }
 				}
 			});
 
@@ -122,31 +131,45 @@
 
 		const layout: any = {
 			xaxis: {
-				title: { text: model.variables[0].name + ' (' + model.variables[0].label + ')' },
+				title: { 
+					text: model.variables[0].name + ' (' + model.variables[0].label + ')',
+					font: { color: inkColor }
+				},
 				range: [0, maxX],
 				autorange: false,
 				zeroline: true,
 				zerolinewidth: 2,
-				zerolinecolor: '#1a1a2e',
-				gridcolor: '#e5e2dc',
+				zerolinecolor: inkColor,
+				gridcolor: gridColor,
+				tickfont: { color: inkLightColor },
 				dtick: Math.ceil(maxX / 8)
 			},
 			yaxis: {
-				title: { text: model.variables[1].name + ' (' + model.variables[1].label + ')' },
+				title: { 
+					text: model.variables[1].name + ' (' + model.variables[1].label + ')',
+					font: { color: inkColor }
+				},
 				range: [0, maxY],
 				autorange: false,
 				zeroline: true,
 				zerolinewidth: 2,
-				zerolinecolor: '#1a1a2e',
-				gridcolor: '#e5e2dc',
+				zerolinecolor: inkColor,
+				gridcolor: gridColor,
+				tickfont: { color: inkLightColor },
 				dtick: Math.ceil(maxY / 8)
 			},
 			showlegend: true,
-			legend: { x: 1, xanchor: 'right', y: 1, bgcolor: 'rgba(255,255,255,0.9)', font: { size: 11 } },
+			legend: { 
+				x: 1, 
+				xanchor: 'right', 
+				y: 1, 
+				bgcolor: legendBg, 
+				font: { size: 11, color: inkColor } 
+			},
 			margin: { t: 20, r: 20, b: 60, l: 60 },
 			paper_bgcolor: 'transparent',
-			plot_bgcolor: '#faf9f7',
-			font: { family: 'Plus Jakarta Sans', color: '#1a1a2e' },
+			plot_bgcolor: plotBg,
+			font: { family: 'Plus Jakarta Sans', color: inkColor },
 			hoverlabel: { font: { family: 'JetBrains Mono' } }
 		};
 
@@ -157,10 +180,17 @@
 		});
 	}
 
-	onMount(async () => {
+	$effect(() => {
+		// Reactive dependencies
+		const _show = show;
+		const _res = result;
+		const _mod = model;
+		const _dark = $isDarkMode;
+
 		if (show === 'graph' || show === 'both') {
-			await tick();
-			renderGraph();
+			tick().then(() => {
+				renderGraph();
+			});
 		}
 	});
 </script>

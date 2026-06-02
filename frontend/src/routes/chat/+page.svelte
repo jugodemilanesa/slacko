@@ -16,6 +16,7 @@
 		isGuidedFlow
 	} from '$lib/stores/chat';
 	import { clearTheory } from '$lib/stores/theory';
+	import { isDarkMode, toggleDarkMode } from '$lib/stores/theme';
 
 	import ChatMessage from '$lib/components/ChatMessage.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
@@ -262,6 +263,20 @@
 			<!-- Right side: action buttons -->
 			<div class="flex items-center gap-2">
 				<button
+					onclick={toggleDarkMode}
+					class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
+						text-ink-muted hover:text-ink transition-colors cursor-pointer"
+					title={$isDarkMode ? 'Modo claro' : 'Modo oscuro'}
+				>
+					{#if $isDarkMode}
+						<!-- Sun icon -->
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+					{:else}
+						<!-- Moon icon -->
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+					{/if}
+				</button>
+				<button
 					onclick={handleNewChat}
 					class="text-xs text-ink-muted hover:text-ink px-3 py-1.5 rounded-lg hover:bg-surface-warm
 						transition-colors cursor-pointer"
@@ -309,24 +324,33 @@
 				<div bind:this={chatContainer} id="chat-container" class="relative flex-1 overflow-y-auto">
 					<div class="px-6 py-6 space-y-4 {$currentState === 'SELECT_MODE' ? 'min-h-full flex flex-col justify-center' : ''}">
 						{#if $currentState === 'SELECT_MODE'}
-							<!-- Background Image at the top of the main menu with a gradient fading to the page background -->
+							<!-- Background Image at the top of the main menu with a gradient fading to the page background (crossfaded between themes) -->
 							<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden">
-								<img src="/background.jpg" alt="" class="w-full h-full object-cover opacity-35" />
-								<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
+								<!-- Light mode background (static base) -->
+								<div class="absolute inset-0">
+									<img src="/background.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
+									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, #faf9f7 100%);"></div>
+								</div>
+								
+								<!-- Dark mode background (transitions on top) -->
+								<div class="absolute inset-0 bg-crossfade-container {$isDarkMode ? 'opacity-100' : 'opacity-0'}">
+									<img src="/background-dark.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
+									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, #0b0b14 100%);"></div>
+								</div>
 							</div>
 
 							<div class="relative z-10 text-center mb-6 select-none">
 								<h1 class="relative inline-block font-display text-5xl md:text-6xl text-ink tracking-tight font-normal">
 									{typedTitle}<span class="cursor-blink"></span>
 								</h1>
-								<p class="text-[0.65rem] tracking-[0.25em] uppercase font-mono text-accent mt-2">
+								<p class="text-[0.65rem] tracking-[0.25em] uppercase font-mono mt-2 {$isDarkMode ? 'text-accent' : 'text-primary'}">
 									TUTOR DE PROGRAMACIÓN LINEAL
 								</p>
 							</div>
 
 							<!-- Container with fixed height to keep title/subtitle in final stable positions (responsive alignment) -->
-							<div class="relative z-10 h-[96px] flex items-end justify-center md:justify-start shrink-0">
-								<div class="w-full max-w-md md:max-w-[75%]">
+							<div class="relative z-10 h-[96px] flex items-end justify-center shrink-0">
+								<div class="w-full max-w-[90vw] md:max-w-4xl lg:max-w-5xl flex justify-start">
 									{#each $messages as msg (msg.id)}
 										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
 									{/each}
@@ -416,11 +440,16 @@
 		display: inline-block;
 		width: 0.28em;
 		height: 2px;
-		background-color: var(--color-accent);
+		background-color: var(--color-primary);
 		bottom: 0.15em;
 		margin-left: 0.08em;
 		animation: blink 1.8s step-end infinite;
 	}
+
+	:global(.dark) .cursor-blink {
+		background-color: var(--color-accent);
+	}
+
 
 	@keyframes blink {
 		from, to {
