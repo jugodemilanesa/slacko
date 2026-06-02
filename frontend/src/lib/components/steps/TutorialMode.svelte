@@ -470,7 +470,7 @@
 		padding: 1.5rem 1.25rem 2rem 1.25rem;
 		display: flex;
 		flex-direction: column;
-		min-height: 100%;
+		height: 100%;
 	}
 
 	.tutorial-header {

@@ -399,19 +399,19 @@
 			{/if}
 
 			{#if inTheoryMode}
-				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+				<div bind:this={chatContainer} class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
 						<TheoryMode />
 					{/key}
 				</div>
 			{:else if inTutorialMode}
-				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+				<div bind:this={chatContainer} class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
 						<TutorialMode />
 					{/key}
 				</div>
 			{:else if inLLMChatMode}
-				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
+				<div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
 						<LLMChatMode />
 					{/key}

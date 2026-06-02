@@ -39,16 +39,50 @@
 			placeholder:text-ink-muted/50"
 	></textarea>
 	<div class="flex items-center justify-between">
-		<span class="text-xs text-ink-muted">Ctrl+Enter para enviar</span>
+		<span class="composer-hint">
+			<span><span class="key">Ctrl</span><span class="key-plus">+</span><span class="key">Enter</span> para enviar</span>
+		</span>
 		<button
 			onclick={submit}
 			disabled={!text.trim()}
-			class="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium
+			class="ml-auto px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium
 				hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
 		>
 			Enviar enunciado
 		</button>
 	</div>
-
-
 </div>
+
+<style>
+	.composer-hint {
+		display: inline-flex;
+		align-items: center;
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 0.72rem;
+		color: var(--color-ink-muted);
+	}
+
+	.key {
+		font-family: var(--font-mono);
+		font-style: normal;
+		font-size: 0.6rem;
+		padding: 0.08rem 0.38rem;
+		border: 1px solid var(--color-bot-border);
+		border-radius: 4px;
+		background: var(--color-surface-card);
+		color: var(--color-ink);
+		margin: 0 0.15rem;
+	}
+
+	.key-plus {
+		font-style: normal;
+		font-family: var(--font-mono);
+	}
+
+	@media (max-width: 700px) {
+		.composer-hint {
+			display: none;
+		}
+	}
+</style>

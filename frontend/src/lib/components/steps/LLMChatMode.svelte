@@ -325,7 +325,7 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		min-height: 100%;
+		height: 100%;
 		isolation: isolate;
 	}
 
@@ -564,7 +564,7 @@
 	.lh-column {
 		max-width: 920px;
 		margin: 0 auto;
-		padding: 1.5rem 1.5rem 45vh 1.5rem;
+		padding: 1.5rem 1.5rem 2.5rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
@@ -1036,6 +1036,9 @@
 		}
 		.composer {
 			padding: 0.7rem 1rem 0.95rem 1rem;
+		}
+		.composer-hint {
+			display: none;
 		}
 		.title {
 			max-width: 160px;

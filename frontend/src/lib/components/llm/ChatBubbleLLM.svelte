@@ -14,6 +14,7 @@
 		role,
 		content,
 		provider,
+		model,
 		toolCalls = [],
 		citations = [],
 		error
@@ -21,6 +22,7 @@
 		role: 'user' | 'assistant';
 		content: string;
 		provider?: string;
+		model?: string;
 		toolCalls?: ChatToolCall[];
 		citations?: string[];
 		error?: string;

@@ -370,7 +370,7 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		min-height: 100%;
+		height: 100%;
 		isolation: isolate;
 	}
 
