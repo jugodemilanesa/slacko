@@ -3,7 +3,6 @@
 
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 	import ChatBubbleLLM from '$lib/components/llm/ChatBubbleLLM.svelte';
-	import ProviderBadge from '$lib/components/llm/ProviderBadge.svelte';
 	import LLMSessionSidebar from '$lib/components/llm/LLMSessionSidebar.svelte';
 
 	import {
@@ -167,7 +166,6 @@
 				</div>
 
 				<div class="lh-right">
-					<ProviderBadge provider={lastAssistantProvider} model={lastAssistantModel} />
 					<button type="button" class="lh-btn ghost" onclick={newChat} title="Empezar un chat nuevo">
 						<span class="btn-glyph">+</span>
 						Nuevo chat
@@ -253,6 +251,7 @@
 						hideTrack={i === $messages.length - 1 && !$isThinking}
 						error={msg.error}
 						animate={msg.animate}
+						isLast={i === $messages.length - 1}
 					/>
 				{/each}
 

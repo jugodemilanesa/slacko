@@ -4,7 +4,6 @@
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 	import ToolCallChip from './ToolCallChip.svelte';
 	import CitationLink from './CitationLink.svelte';
-	import ProviderBadge from './ProviderBadge.svelte';
 	import ParseProblemArtifact from './ParseProblemArtifact.svelte';
 	import SolveLpArtifact from './SolveLpArtifact.svelte';
 
@@ -19,7 +18,8 @@
 		citations = [],
 		error = null,
 		hideTrack = false,
-		animate = false
+		animate = false,
+		isLast = false
 	}: {
 		role: 'user' | 'assistant';
 		content: string;
@@ -30,6 +30,7 @@
 		error?: string | null;
 		hideTrack?: boolean;
 		animate?: boolean;
+		isLast?: boolean;
 	} = $props();
 
 	import { onMount } from 'svelte';
@@ -38,14 +39,14 @@
 
 	let displayedHtml = $state('');
 	let progress = $state(0);
-	let finalHeight = $state<number | null>(null);
+	let trueFinalSpineHeight = $state<number | null>(null);
+	let currentSpineHeight = $state(0);
+
+	const parsed = $derived(role === 'assistant' ? (marked.parse(content || '') as string) : '');
 
 	onMount(() => {
 		const r = role;
-		const c = content;
 		const a = animate;
-		
-		const parsed = r === 'assistant' ? (marked.parse(c || '') as string) : '';
 		
 		if (a && r === 'assistant') {
 			let tokens: string[] = [];
@@ -69,7 +70,9 @@
 				}
 			}
 
+			let totalVisible = tokens.filter(t => !t.startsWith('<')).length;
 			let length = 0;
+			let visibleLength = 0;
 			let html = '';
 			
 			// Si el primer token es un tag, agregarlo instantáneamente
@@ -78,18 +81,20 @@
 				length++;
 			}
 			displayedHtml = html;
-			progress = tokens.length > 0 ? length / tokens.length : 1;
+			progress = totalVisible > 0 ? visibleLength / totalVisible : 1;
 
 			const speed = 180; // chars por segundo
 			const startTime = Date.now();
 			
 			const interval = setInterval(() => {
 				const elapsed = (Date.now() - startTime) / 1000;
-				const targetLength = Math.floor(elapsed * speed);
+				const targetVisible = Math.floor(elapsed * speed);
 
-				while (length < targetLength && length < tokens.length) {
+				while (visibleLength < targetVisible && length < tokens.length) {
 					html += tokens[length];
+					if (!tokens[length].startsWith('<')) visibleLength++;
 					length++;
+					
 					while (length < tokens.length && tokens[length].startsWith('<')) {
 						html += tokens[length];
 						length++;
@@ -97,10 +102,23 @@
 				}
 
 				displayedHtml = html;
-				progress = tokens.length > 0 ? length / tokens.length : 1;
+				progress = totalVisible > 0 ? visibleLength / totalVisible : 1;
+				
+				if (trueFinalSpineHeight && totalVisible > 0) {
+					// Precalcular la velocidad constante en función de la distancia y letras por minuto
+					const distancia = trueFinalSpineHeight;
+					const cantidadLetras = totalVisible;
+					const velocidadLetrasPorMinuto = speed * 60; // speed es chars/seg, así que * 60 = chars/min
+					const minutosTotal = cantidadLetras / velocidadLetrasPorMinuto;
+					const velocidadLineaPorMinuto = distancia / minutosTotal;
+					
+					const elapsedMinutes = elapsed / 60;
+					currentSpineHeight = Math.min(distancia, elapsedMinutes * velocidadLineaPorMinuto);
+				}
 				
 				if (length >= tokens.length) {
 					progress = 1;
+					if (trueFinalSpineHeight) currentSpineHeight = trueFinalSpineHeight;
 					clearInterval(interval);
 				}
 			}, 16);
@@ -108,6 +126,7 @@
 			return () => clearInterval(interval);
 		} else {
 			displayedHtml = parsed;
+			progress = 1;
 		}
 	});
 
@@ -139,9 +158,32 @@
 	</div>
 {:else}
 	<div class="turn bot-turn" class:has-error={!!error} class:is-last={hideTrack}>
-		<div class="marginalia" aria-hidden="true">
+		{#if animate && role === 'assistant' && progress < 1}
+			<!-- Hidden precalc clone to get the exact final distance for the line -->
+			<div style="position: absolute; visibility: hidden; pointer-events: none; width: 100%; top: 0; left: 0; display: grid; grid-template-columns: 48px 1fr; gap: 0.55rem 1rem; align-items: stretch;" aria-hidden="true">
+				<div class="marginalia">
+					<SlakingAvatar expression={error ? 'sad' : 'explain'} size="sm" />
+					<span bind:clientHeight={trueFinalSpineHeight} style="flex: 1; min-height: 36px; margin-bottom: 10px;"></span>
+				</div>
+				<div class="bot-content">
+					{#if error}
+						<div class="err-banner">
+							<div class="err-overline">Falla del LLM — respondí con el matcher determinístico</div>
+							<div class="err-detail">{error}</div>
+						</div>
+					{/if}
+					<div style="position: relative; width: 100%;">
+						<div class="bubble">
+							<div class="prose">{@html parsed}</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<div class="marginalia" class:is-finished={progress === 1} class:is-latest={isLast} aria-hidden="true">
 			<SlakingAvatar expression={error ? 'sad' : 'explain'} size="sm" />
-			<span class="spine"></span>
+			<span class="spine" style={animate && progress < 1 ? `height: ${currentSpineHeight}px; min-height: 0; flex: none;` : ''}></span>
 		</div>
 
 		<div class="bot-content">
@@ -153,13 +195,7 @@
 			{/if}
 
 			<div style="position: relative; width: 100%;">
-				{#if animate && role === 'assistant' && progress < 1}
-					<div class="bubble" style="position: absolute; visibility: hidden; pointer-events: none; width: 100%; top: 0; left: 0;" aria-hidden="true" bind:clientHeight={finalHeight}>
-						<div class="prose">{@html parsed}</div>
-					</div>
-				{/if}
-
-				<div class="bubble" style={animate && progress < 1 && finalHeight ? `height: ${54 + (finalHeight - 54) * progress}px; overflow: hidden;` : ''}>
+				<div class="bubble">
 					<div class="prose">{@html displayedHtml}</div>
 				</div>
 			</div>
@@ -170,39 +206,36 @@
 		{/if}
 
 		<div class="bot-accessories">
-			{#if toolCalls.length > 0}
-				<div class="chips">
-					{#each toolCalls as tool, i (i)}
-						<ToolCallChip {tool} />
+			{#if progress === 1}
+				<div class="accessories-content">
+					{#if toolCalls.length > 0 || citations.length > 0}
+						<div class="chips">
+							{#each toolCalls as tool, i (i)}
+								<ToolCallChip {tool} />
+								{#if tool.name === 'theory_lookup'}
+									{#each citations as c, j (j)}
+										<CitationLink citation={c} />
+									{/each}
+								{/if}
+							{/each}
+							{#if !toolCalls.some(t => t.name === 'theory_lookup') && citations.length > 0}
+								{#each citations as c, i (i)}
+									<CitationLink citation={c} />
+								{/each}
+							{/if}
+						</div>
+					{/if}
+
+					{#each parseTools as t, i (i)}
+						<ParseProblemArtifact args={t.arguments} />
+					{/each}
+
+					{#each solveTools as t, i (i)}
+						<SolveLpArtifact toolName={t.name as 'solve_lp' | 'graph_lp'} args={t.arguments} />
 					{/each}
 				</div>
 			{/if}
-
-			{#each parseTools as t, i (i)}
-				<ParseProblemArtifact args={t.arguments} />
-			{/each}
-
-			{#each solveTools as t, i (i)}
-				<SolveLpArtifact toolName={t.name as 'solve_lp' | 'graph_lp'} args={t.arguments} />
-			{/each}
-
-			{#if citations.length > 0}
-				<div class="citations">
-					<span class="cite-label" aria-hidden="true">
-						<span class="cite-glyph">§</span>
-						Referencias
-					</span>
-					<div class="cite-list">
-						{#each citations as c, i (i)}
-							<CitationLink citation={c} />
-						{/each}
-					</div>
-				</div>
-			{/if}
-
-			<div class="footer">
-				<ProviderBadge {provider} {model} />
-			</div>
+			
 		</div>
 	</div>
 {/if}
@@ -318,24 +351,106 @@
 		);
 	}
 
-	.marginalia::after {
+	.spine::after {
 		content: '';
 		position: absolute;
 		left: 50%;
-		bottom: 6px;
+		bottom: -4px;
 		width: 8px;
 		height: 8px;
 		background: var(--color-accent);
 		border-radius: 50%;
-		transform: translateX(-50%);
+		transform: translateX(-50%) scale(0);
 		box-shadow: 0 0 8px var(--color-accent);
-		opacity: 0.9;
+		opacity: 0;
 		z-index: 2;
 	}
 
-	:global(.dark) .marginalia::after {
+	.marginalia.is-finished .spine::after {
+		animation: dotAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+	}
+
+	.marginalia.is-finished.is-latest .spine::before {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: -4px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		transform: translateX(-50%);
+		z-index: 1;
+		animation:
+			burstShockwave 2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards,
+			pulseShockwave 2s infinite 2s;
+	}
+
+	:global(.dark) .spine::after {
 		background: var(--color-primary);
 		box-shadow: 0 0 6px var(--color-primary);
+	}
+
+	:global(.dark) .marginalia.is-finished .spine::after {
+		animation: dotAppear 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+	}
+
+	:global(.dark) .marginalia.is-finished.is-latest .spine::before {
+		animation:
+			burstShockwaveDark 2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards,
+			pulseShockwaveDark 2s infinite 2s;
+	}
+
+	@keyframes dotAppear {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) scale(0);
+		}
+		to {
+			opacity: 0.9;
+			transform: translateX(-50%) scale(1);
+		}
+	}
+
+	@keyframes burstShockwave {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 90%, transparent);
+		}
+		100% {
+			box-shadow: 0 0 0 48px transparent;
+		}
+	}
+
+	@keyframes burstShockwaveDark {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 90%, transparent);
+		}
+		100% {
+			box-shadow: 0 0 0 48px transparent;
+		}
+	}
+
+	@keyframes pulseShockwave {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 50%, transparent);
+		}
+		70% {
+			box-shadow: 0 0 0 10px transparent;
+		}
+		100% {
+			box-shadow: 0 0 0 0 transparent;
+		}
+	}
+
+	@keyframes pulseShockwaveDark {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 50%, transparent);
+		}
+		70% {
+			box-shadow: 0 0 0 10px transparent;
+		}
+		100% {
+			box-shadow: 0 0 0 0 transparent;
+		}
 	}
 
 	.bot-content {
@@ -354,6 +469,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.55rem;
+	}
+
+	.accessories-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		animation: fadeUp 0.4s ease-out;
 	}
 
 	.bot-track {
@@ -543,51 +665,12 @@
 		text-underline-offset: 2px;
 	}
 
-	/* Chips, citations, footer -------------------------------------------- */
+	/* Chips and footer -------------------------------------------- */
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
-
-	.citations {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
-		flex-wrap: wrap;
-		padding-top: 0.2rem;
-	}
-
-	.cite-label {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-family: var(--font-mono);
-		font-size: 0.58rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: var(--color-ink-muted);
-	}
-
-	.cite-glyph {
-		font-family: var(--font-display);
-		font-style: italic;
-		color: var(--color-accent);
-		font-size: 0.85rem;
-	}
-
-	.cite-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-
-	.footer {
-		display: flex;
-		justify-content: flex-end;
-		padding-top: 0.15rem;
-	}
-
 	/* Errors --------------------------------------------------------------- */
 	.err-banner {
 		padding: 0.55rem 0.85rem 0.65rem 0.85rem;

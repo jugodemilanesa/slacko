@@ -37,6 +37,8 @@
 	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
 	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
 	import LLMChatMode from '$lib/components/steps/LLMChatMode.svelte';
+	import ProviderBadge from '$lib/components/llm/ProviderBadge.svelte';
+	import { messages as llmMessages } from '$lib/stores/llmChat';
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(false);
@@ -213,6 +215,22 @@
 	const inLLMChatMode = $derived($currentState === 'LLM_CHAT');
 	const inFullMode = $derived(inTheoryMode || inTutorialMode || inLLMChatMode);
 
+	const lastAssistantProvider = $derived.by(() => {
+		const arr = $llmMessages;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].role === 'assistant' && arr[i].provider) return arr[i].provider;
+		}
+		return undefined;
+	});
+
+	const lastAssistantModel = $derived.by(() => {
+		const arr = $llmMessages;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].role === 'assistant' && arr[i].model) return arr[i].model;
+		}
+		return undefined;
+	});
+
 	let isWide = $state(false);
 	let sidebarManuallyClosed = $state(false);
 	let tipsManuallyClosed = $state(false);
@@ -348,6 +366,11 @@
 						>
 							Chat con IA
 						</span>
+						{#if lastAssistantProvider || lastAssistantModel}
+							<div class="ml-2 mt-1">
+								<ProviderBadge provider={lastAssistantProvider} model={lastAssistantModel} />
+							</div>
+						{/if}
 					{:else if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
 						<span
 							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-primary
