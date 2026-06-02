@@ -9,6 +9,23 @@
 		const divider = container.querySelector(`[data-step="${step}"]`);
 		if (divider) {
 			divider.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+			// Trigger sweeping flash animation
+			const textSpan = divider.querySelector('.step-text');
+			if (textSpan) {
+				textSpan.classList.remove('flash-sweep');
+				void (textSpan as HTMLElement).offsetWidth; // Force reflow
+				textSpan.classList.add('flash-sweep');
+
+				// Remove class after animation finishes (1.6s)
+				textSpan.addEventListener(
+					'animationend',
+					() => {
+						textSpan.classList.remove('flash-sweep');
+					},
+					{ once: true }
+				);
+			}
 		}
 	}
 </script>
@@ -26,7 +43,7 @@
 				onclick={() => scrollToStep(step)}
 			></button>
 			<div
-				class="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 text-[0.65rem] font-medium whitespace-nowrap
+				class="absolute top-full -mt-1 left-1/2 -translate-x-1/2 text-[0.65rem] font-medium whitespace-nowrap
 					opacity-0 group-hover:opacity-100 transition-opacity px-2 py-0.5 rounded pointer-events-none
 					{isDone ? 'text-accent' : isActive ? 'text-primary' : 'text-ink-muted'}"
 			>

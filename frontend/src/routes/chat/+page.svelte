@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { isAuthenticated, clearTokens } from '$lib/api/client';
 	import { goto } from '$app/navigation';
 	import {
@@ -13,7 +13,9 @@
 		STEP_LABELS,
 		currentStepIndex,
 		STEP_ORDER,
-		isGuidedFlow
+		isGuidedFlow,
+		model,
+		tipsHistory
 	} from '$lib/stores/chat';
 	import { clearTheory } from '$lib/stores/theory';
 	import { isDarkMode, toggleDarkMode } from '$lib/stores/theme';
@@ -38,6 +40,51 @@
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(false);
+	let tipsOpen = $state(false);
+	let hasModelChanges = $state(false);
+
+	// Check if the model is in its empty initial state
+	const isModelEmpty = $derived(
+		!$model.enunciado &&
+		!$model.variables[0].label &&
+		!$model.variables[1].label &&
+		$model.constraints.length === 0
+	);
+
+	$effect(() => {
+		// Read $model to register reactive dependency
+		const m = $model;
+		untrack(() => {
+			if (!sidebarOpen && !isModelEmpty) {
+				hasModelChanges = true;
+			}
+		});
+	});
+
+	$effect(() => {
+		if (sidebarOpen) {
+			hasModelChanges = false;
+		}
+	});
+
+	let unreadTipsCount = $state(0);
+	let lastSeenTipsLength = $state(0);
+
+	$effect(() => {
+		const historyLen = $tipsHistory.length;
+		if (tipsOpen) {
+			lastSeenTipsLength = historyLen;
+			unreadTipsCount = 0;
+		} else {
+			if (historyLen < lastSeenTipsLength) {
+				// Chat was reset
+				lastSeenTipsLength = historyLen;
+				unreadTipsCount = 0;
+			} else {
+				unreadTipsCount = historyLen - lastSeenTipsLength;
+			}
+		}
+	});
 
 	let typedTitle = $state('');
 
@@ -166,11 +213,65 @@
 	const inLLMChatMode = $derived($currentState === 'LLM_CHAT');
 	const inFullMode = $derived(inTheoryMode || inTutorialMode || inLLMChatMode);
 
+	let isWide = $state(false);
+	let sidebarManuallyClosed = $state(false);
+	let tipsManuallyClosed = $state(false);
+
+	function toggleSidebar() {
+		sidebarOpen = !sidebarOpen;
+		if (!sidebarOpen) {
+			sidebarManuallyClosed = true;
+		} else {
+			sidebarManuallyClosed = false;
+		}
+	}
+
+	function toggleTips() {
+		tipsOpen = !tipsOpen;
+		if (!tipsOpen) {
+			tipsManuallyClosed = true;
+		} else {
+			tipsManuallyClosed = false;
+		}
+	}
+
+	$effect(() => {
+		// Track screen width and state changes
+		const _wide = isWide;
+		const _state = $currentState;
+		const _full = inFullMode;
+
+		untrack(() => {
+			if (_wide && _state !== 'SELECT_MODE' && !_full) {
+				if (!sidebarManuallyClosed) sidebarOpen = true;
+				if (!tipsManuallyClosed) tipsOpen = true;
+			}
+		});
+	});
+
+	$effect(() => {
+		if ($currentState === 'SELECT_MODE') {
+			sidebarManuallyClosed = false;
+			tipsManuallyClosed = false;
+			sidebarOpen = false;
+			tipsOpen = false;
+		}
+	});
+
 	onMount(() => {
 		if (!isAuthenticated()) {
 			goto('/login');
 			return;
 		}
+
+		// Set up media query listener for wide screens
+		const mediaQuery = window.matchMedia('(min-width: 1024px)');
+		isWide = mediaQuery.matches;
+		const handleMediaChange = (e: MediaQueryListEvent) => {
+			isWide = e.matches;
+		};
+		mediaQuery.addEventListener('change', handleMediaChange);
+
 		const restored = restoreGuidedState();
 		if (!restored && $messages.length === 0) {
 			sendAssistantMessage(
@@ -178,6 +279,10 @@
 				{ delay: 600, expression: 'happy' }
 			);
 		}
+
+		return () => {
+			mediaQuery.removeEventListener('change', handleMediaChange);
+		};
 	});
 
 	// Auto-scroll when messages change
@@ -207,11 +312,6 @@
 </script>
 
 <div class="flex h-screen overflow-hidden bg-surface">
-	<!-- Sidebar (only for guided flow) -->
-	{#if !inFullMode && $currentState !== 'SELECT_MODE'}
-		<ModelSidebar open={sidebarOpen} />
-	{/if}
-
 	<div class="flex flex-col flex-1 min-w-0">
 		<!-- Header (full width at top) -->
 		<header
@@ -219,17 +319,6 @@
 		>
 			<!-- Left side: sidebar toggle + Slacko title + badges -->
 			<div class="flex items-center gap-4">
-				{#if !inFullMode && $currentState !== 'SELECT_MODE'}
-					<button
-						onclick={() => (sidebarOpen = !sidebarOpen)}
-						class="w-8 h-8 rounded-lg hover:bg-surface-warm flex items-center justify-center
-							text-ink-muted hover:text-ink transition-colors cursor-pointer text-sm"
-						title={sidebarOpen ? 'Ocultar modelo' : 'Mostrar modelo'}
-					>
-						{sidebarOpen ? '◀' : '▶'}
-					</button>
-				{/if}
-
 				<div class="flex items-center gap-3">
 					<h1 class="font-display text-2xl text-ink">
 						<button
@@ -260,8 +349,11 @@
 							Chat con IA
 						</span>
 					{:else if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
-						<span class="text-xs text-ink-muted bg-surface-warm px-2 py-0.5 rounded-full">
-							Paso {$currentStepIndex + 1} de {STEP_ORDER.length} — {STEP_LABELS[$currentState]}
+						<span
+							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-primary
+								bg-primary/8 px-2 py-0.5 rounded-full border border-primary/30"
+						>
+							Paso a paso
 						</span>
 					{/if}
 				</div>
@@ -298,17 +390,14 @@
 					Salir
 				</button>
 			</div>
-
-			<!-- ProgressBar absolutely positioned at the bottom of the header (only in guided flow) -->
-			{#if !inFullMode && $currentState !== 'SELECT_MODE'}
-				<div class="absolute bottom-2 left-6 max-w-md w-[calc(100%-3rem)]">
-					<ProgressBar />
-				</div>
-			{/if}
 		</header>
 
 		<!-- Below header: theory/tutorial full-width, guided flow with tips panel al costado -->
 		<div class="flex flex-1 min-h-0">
+			{#if !inFullMode && $currentState !== 'SELECT_MODE'}
+				<ModelSidebar open={sidebarOpen} />
+			{/if}
+
 			{#if inTheoryMode}
 				<div bind:this={chatContainer} class="flex-1 overflow-y-auto">
 					{#key $currentState}
@@ -328,21 +417,78 @@
 					{/key}
 				</div>
 			{:else}
-				<div bind:this={chatContainer} id="chat-container" class="relative flex-1 overflow-y-auto">
-					<div class="px-6 py-6 space-y-4 {$currentState === 'SELECT_MODE' ? 'min-h-full flex flex-col justify-center' : ''}">
+				<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+					{#if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
+						<header class="secondary-header">
+							<div class="lh-inner">
+								<div class="lh-left">
+									<span class="title">Paso {$currentStepIndex + 1}: {STEP_LABELS[$currentState]}</span>
+									<div class="w-[120px] sm:w-[180px] md:w-[240px]">
+										<ProgressBar />
+									</div>
+								</div>
+
+								<div class="lh-right">
+									<button
+										type="button"
+										class="lh-btn cursor-pointer"
+										onclick={handleNewChat}
+										title="Reiniciar y volver al menú principal"
+									>
+										<span class="btn-glyph">↺</span>
+										Reiniciar
+									</button>
+								</div>
+							</div>
+						</header>
+					{/if}
+
+					<!-- Floating Sidebar Toggle Button -->
+					{#if !inFullMode && $currentState !== 'SELECT_MODE'}
+						<button
+							onclick={toggleSidebar}
+							class="absolute left-0 top-20 z-20 w-8 h-10 rounded-r-lg bg-surface-card border-y border-r border-bot-border shadow-md flex items-center justify-center text-ink-muted hover:text-primary hover:border-primary transition-all cursor-pointer hover:scale-[1.03]"
+							title={sidebarOpen ? 'Ocultar modelo' : 'Mostrar modelo'}
+						>
+							{#if !sidebarOpen && hasModelChanges}
+								<span class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-success rounded-full border-2 border-surface-card z-30"></span>
+							{/if}
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<path d="M18 4H6l7 8-7 8h12" />
+							</svg>
+						</button>
+
+						<!-- Floating Tips Toggle Button -->
+						<button
+							onclick={toggleTips}
+							class="absolute right-0 top-20 z-20 w-8 h-10 rounded-l-lg bg-surface-card border-y border-l border-bot-border shadow-md flex items-center justify-center text-ink-muted hover:text-accent hover:border-accent transition-all cursor-pointer hover:scale-[1.03]"
+							title={tipsOpen ? 'Ocultar tips' : 'Mostrar tips'}
+						>
+							{#if !tipsOpen && unreadTipsCount > 0}
+								<span class="absolute -top-1.5 -left-1.5 min-w-4 h-4 px-1 bg-error text-white font-mono text-[0.6rem] font-bold rounded-full border border-surface-card flex items-center justify-center z-30 shadow-sm">
+									{unreadTipsCount}
+								</span>
+							{/if}
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+								<path d="M9 18h6" />
+								<path d="M10 22h4" />
+								<path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" />
+							</svg>
+						</button>
+					{/if}
+
+					<div bind:this={chatContainer} id="chat-container" class="relative flex-1 overflow-y-auto">
+					<div class="px-6 pt-6 pb-[45vh] space-y-4 {$currentState === 'SELECT_MODE' ? 'min-h-full flex flex-col justify-center !pb-6' : ''}">
 						{#if $currentState === 'SELECT_MODE'}
-							<!-- Background Image at the top of the main menu with a gradient fading to the page background (crossfaded between themes) -->
-							<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden">
+							<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden" style="mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);">
 								<!-- Light mode background -->
 								<div class="absolute inset-0 light-bg-image bg-crossfade-container">
 									<img src="/background.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
-									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
 								</div>
 								
 								<!-- Dark mode background -->
 								<div class="absolute inset-0 dark-bg-image bg-crossfade-container">
 									<img src="/background-dark.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
-									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
 								</div>
 							</div>
 
@@ -381,8 +527,8 @@
 
 						<!-- Paso activo (queda al final; los pasos anteriores quedan trazados
 							 en los divisores y mensajes del scroll) -->
-						<div class="relative z-10 flex {$currentState === 'SELECT_MODE' ? 'justify-center' : 'justify-start'}">
-							<div class="{$currentState === 'SELECT_MODE' ? 'max-w-md mt-8' : 'max-w-[85%]'} w-full">
+						<div class="relative z-10 flex justify-center">
+							<div class="{$currentState === 'SELECT_MODE' ? 'max-w-md mt-8' : 'max-w-2xl'} w-full">
 								{#key $currentState}
 									{#if $currentState === 'SELECT_MODE'}
 										<SelectMode />
@@ -408,23 +554,26 @@
 						</div>
 					</div>
 				</div>
+				</div>
 			{/if}
 
 			{#if !inFullMode && $currentState !== 'SELECT_MODE'}
-				<TipsHistoryPanel />
+				<TipsHistoryPanel open={tipsOpen} />
 			{/if}
 		</div>
 	</div>
 </div>
 
 <style>
-	.llm-chip-badge {
+	.llm-chip-badge,
+	.step-chip-badge {
 		position: relative;
 		background: var(--color-surface-card);
 		color: var(--color-ink);
 		border: 1px solid transparent;
 	}
-	.llm-chip-badge::before {
+	.llm-chip-badge::before,
+	.step-chip-badge::before {
 		content: '';
 		position: absolute;
 		inset: -1px;
@@ -478,6 +627,140 @@
 		}
 		50% {
 			opacity: 0;
+		}
+	}
+
+	/* Secondary Header ----------------------------------------------------- */
+	.secondary-header {
+		position: relative;
+		z-index: 5;
+		padding: 0.55rem 1.5rem;
+		background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		border-bottom: 1px solid var(--color-bot-border);
+		flex-shrink: 0;
+	}
+
+	.lh-inner {
+		max-width: 920px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.lh-left {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-ink);
+		padding: 0.3rem 0.7rem 0.3rem 0.5rem;
+		border-radius: 999px;
+		background: var(--color-surface-card);
+		border: 1px solid transparent;
+		position: relative;
+	}
+
+	.chip::before {
+		content: '';
+		position: absolute;
+		inset: -1px;
+		border-radius: inherit;
+		padding: 1px;
+		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		-webkit-mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+	}
+
+	.chip-rail {
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+		animation: pulse 2.4s infinite ease-in-out;
+	}
+
+	.chip-glyph {
+		font-family: var(--font-display);
+		font-style: italic;
+		color: var(--color-accent);
+		font-size: 0.95rem;
+		line-height: 1;
+	}
+
+	.title {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: 0.92rem;
+		color: var(--color-ink);
+		max-width: 320px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.lh-right {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.lh-btn {
+		font-family: var(--font-body);
+		font-size: 0.78rem;
+		padding: 0.42rem 0.9rem;
+		border-radius: 999px;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		border: 1px solid var(--color-bot-border);
+		background: var(--color-surface-card);
+		color: var(--color-ink);
+	}
+
+	.lh-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+
+	.btn-glyph {
+		font-family: var(--font-mono);
+		font-size: 0.9rem;
+		color: var(--color-accent);
+		line-height: 1;
+	}
+
+	@keyframes pulse {
+		0%,
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.4);
+			opacity: 0.45;
 		}
 	}
 </style>

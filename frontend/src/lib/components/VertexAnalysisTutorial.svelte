@@ -274,22 +274,24 @@
 		font-family: var(--font-body);
 		font-size: 0.85rem;
 		font-weight: 500;
-		background: var(--color-ink);
-		color: white;
-		border: none;
+		background-color: var(--color-surface-card);
+		color: var(--color-ink);
+		border: 1px solid var(--color-bot-border);
 		padding: 0.7rem 1.2rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
 
 	.cta-btn:hover {
-		background: var(--color-primary);
+		background-color: var(--color-primary);
+		color: white;
+		border-color: var(--color-primary);
 		transform: translateY(-1px);
-		box-shadow: 0 6px 14px -6px rgba(59, 76, 192, 0.4);
+		box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--color-primary) 40%, transparent);
 	}
 
 	.cta-btn:hover .arrow {
@@ -298,7 +300,7 @@
 
 	.arrow {
 		font-family: var(--font-display);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	@keyframes fadeUp {

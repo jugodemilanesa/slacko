@@ -1,13 +1,5 @@
 <script lang="ts">
-	import { addMessage, advanceState, goToState, sendAssistantMessage, addTip } from '$lib/stores/chat';
-
-	$effect(() => {
-		addTip(
-			'tip',
-			'Chat con Slacko es la entrada más amplia — usa IA para conversar libremente. Si querés un recorrido guiado paso a paso o repasar conceptos puntuales, elegí los modos determinísticos.',
-			'¿Cuál elegir?'
-		);
-	});
+	import { addMessage, advanceState, goToState, sendAssistantMessage } from '$lib/stores/chat';
 
 	function selectLLMChat() {
 		goToState('LLM_CHAT');
@@ -99,8 +91,8 @@
 	>
 		<div class="flex items-center gap-3">
 			<div
-				class="w-10 h-10 rounded-lg bg-ink/8 flex items-center justify-center text-ink text-lg
-					group-hover:bg-ink group-hover:text-white transition-colors font-display"
+				class="tutorial-icon w-10 h-10 rounded-lg bg-ink/8 flex items-center justify-center text-lg
+					group-hover:bg-ink transition-colors font-display"
 			>
 				✦
 			</div>
@@ -202,19 +194,31 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		transition: background 0.22s ease;
 		animation: spin 12s linear infinite;
+		overflow: hidden;
 	}
 
-	.llm-card:hover .llm-icon {
+	.llm-icon::before {
+		content: '';
+		position: absolute;
+		inset: 0;
 		background: linear-gradient(
 			var(--gradient-angle),
 			var(--color-primary),
 			var(--color-accent)
 		);
+		opacity: 0;
+		transition: opacity 0.22s ease-in-out;
+		z-index: 1;
+	}
+
+	.llm-card:hover .llm-icon::before {
+		opacity: 1;
 	}
 
 	.llm-glyph {
+		position: relative;
+		z-index: 2;
 		font-family: var(--font-display);
 		font-style: italic;
 		font-size: 1.55rem;
@@ -290,5 +294,18 @@
 	.llm-card:hover .llm-arrow {
 		color: var(--color-primary);
 		transform: translateX(3px);
+	}
+
+	.tutorial-icon {
+		color: var(--color-ink);
+		transition: color 0.15s ease-in-out;
+	}
+
+	.group:hover .tutorial-icon {
+		color: white;
+	}
+
+	:global(.dark) .group:hover .tutorial-icon {
+		color: var(--color-surface-card);
 	}
 </style>

@@ -349,19 +349,21 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.65rem 1.2rem;
-		background: var(--color-ink);
-		color: white;
-		border: none;
+		background-color: var(--color-surface-card);
+		color: var(--color-ink);
+		border: 1px solid var(--color-bot-border);
 		border-radius: 999px;
 		font-family: var(--font-body);
 		font-size: 0.85rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.cta-btn:hover {
-		background: var(--color-primary);
+		background-color: var(--color-primary);
+		color: white;
+		border-color: var(--color-primary);
 		transform: translateY(-1px);
 	}
 
@@ -380,19 +382,19 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.primary-cta:hover {
 		background: var(--color-ink);
-		color: white;
+		color: var(--color-surface-card);
 		transform: translateY(-1px);
-		box-shadow: 0 8px 22px -10px rgba(26, 26, 46, 0.4);
+		box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--color-ink) 40%, transparent);
 	}
 
 	.arrow {
 		font-family: var(--font-display);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	.cta-btn:hover .arrow,

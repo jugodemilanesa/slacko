@@ -210,7 +210,7 @@
 
 	.formula {
 		padding: 0.5rem 0.75rem;
-		background: white;
+		background: var(--color-surface-card);
 		border-radius: 6px;
 		border: 1px solid var(--color-bot-border);
 	}
@@ -262,7 +262,7 @@
 		align-items: baseline;
 		gap: 0.55rem;
 		padding: 0.35rem 0.6rem;
-		background: white;
+		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-left: 3px solid var(--color-primary);
 		border-radius: 0 6px 6px 0;
@@ -304,7 +304,7 @@
 		font-family: var(--font-body);
 		font-size: 0.88rem;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.btn-secondary:hover {
@@ -322,12 +322,12 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.btn-primary:hover {
 		background: var(--color-primary-dark, #2d3a9a);
 		transform: translateY(-1px);
-		box-shadow: 0 6px 16px -8px rgba(59, 76, 192, 0.5);
+		box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--color-primary) 50%, transparent);
 	}
 </style>

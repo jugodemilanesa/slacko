@@ -77,16 +77,13 @@
 		grid-template-columns: 28px 1fr;
 		gap: 0.85rem;
 		padding: 0.85rem 1rem 0.95rem 0.75rem;
-		background: linear-gradient(
-			to right,
-			rgba(212, 168, 83, 0.05),
-			rgba(212, 168, 83, 0)
-		);
+		background-color: color-mix(in srgb, var(--color-accent, #d4a853) 4%, transparent);
 		border-left: 2px solid var(--color-accent, #d4a853);
 		border-radius: 0 8px 8px 0;
 		font-family: var(--font-body, 'Plus Jakarta Sans');
 		position: relative;
 		animation: fadeIn 0.25s ease-out;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.slacko-tip.dense {
@@ -105,15 +102,12 @@
 		border-left: 2px solid var(--color-accent, #d4a853);
 		border-top-left-radius: 4px;
 		opacity: 0.35;
+		transition: border-color 0.25s ease-in-out;
 	}
 
 	.slacko-tip[data-kind='warning'] {
 		border-left-color: var(--color-error, #d44848);
-		background: linear-gradient(
-			to right,
-			rgba(212, 72, 72, 0.06),
-			rgba(212, 72, 72, 0)
-		);
+		background-color: color-mix(in srgb, var(--color-error, #d44848) 5%, transparent);
 	}
 	.slacko-tip[data-kind='warning']::before {
 		border-color: var(--color-error, #d44848);
@@ -121,11 +115,7 @@
 
 	.slacko-tip[data-kind='concept'] {
 		border-left-color: var(--color-primary, #3b4cc0);
-		background: linear-gradient(
-			to right,
-			rgba(59, 76, 192, 0.06),
-			rgba(59, 76, 192, 0)
-		);
+		background-color: color-mix(in srgb, var(--color-primary, #3b4cc0) 5%, transparent);
 	}
 	.slacko-tip[data-kind='concept']::before {
 		border-color: var(--color-primary, #3b4cc0);
@@ -154,7 +144,8 @@
 		height: 26px;
 		border-radius: 50%;
 		border: 1px solid currentColor;
-		background: var(--color-surface-card, #fffaf2);
+		background-color: var(--color-surface-card, #fffaf2);
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.slacko-tip.dense .glyph {
@@ -257,10 +248,11 @@
 	.content :global(.k) {
 		font-family: var(--font-mono);
 		font-size: 0.82em;
-		background: rgba(26, 26, 46, 0.04);
+		background-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
 		padding: 0.05em 0.35em;
 		border-radius: 3px;
 		color: var(--color-ink);
+		transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.content :global(ul) {

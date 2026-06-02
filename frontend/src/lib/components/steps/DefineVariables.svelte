@@ -149,11 +149,7 @@
 
 <style>
 	.formula-preview {
-		background: linear-gradient(
-			180deg,
-			var(--color-surface-card, #fffaf2) 0%,
-			var(--color-surface-warm, #fff7e8) 100%
-		);
+		background: var(--color-surface-warm);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 10px;
 		padding: 0.75rem 1rem 0.85rem 1rem;

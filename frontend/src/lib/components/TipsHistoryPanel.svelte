@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tipsHistory, STEP_LABELS, type TipEntry } from '$lib/stores/chat';
 
+	let { open = true }: { open?: boolean } = $props();
+
 	const kindColors: Record<string, { bg: string; border: string; text: string }> = {
 		tip: { bg: 'rgba(212,168,83,0.06)', border: '#d4a853', text: '#d4a853' },
 		concept: { bg: 'rgba(59,76,192,0.06)', border: '#3b4cc0', text: '#3b4cc0' },
@@ -28,13 +30,14 @@
 	});
 </script>
 
-<aside class="tips-panel" aria-label="Historial de tips y conceptos">
-	<div class="tips-scroll">
-		{#each Object.entries(groups) as [stepLabel, tips]}
-			<div class="step-group">
-				<div class="step-heading">{stepLabel}</div>
-				<div class="tip-list">
-					{#each tips as tip (tip.id)}
+<aside class="tips-panel" class:closed={!open} aria-label="Historial de tips y conceptos">
+	<div class="panel-content">
+		<div class="tips-scroll">
+			{#each Object.entries(groups) as [stepLabel, tips]}
+				<div class="step-group">
+					<div class="step-heading">{stepLabel}</div>
+					<div class="tip-list">
+						{#each tips as tip (tip.id)}
 							{@const colors = kindColors[tip.kind] || kindColors.tip}
 							<div class="tip-entry" style="border-left-color: {colors.border}; background: {colors.bg};">
 								<div class="tip-header" style="color: {colors.text};">
@@ -52,14 +55,30 @@
 					</div>
 				</div>
 			{/each}
+		</div>
 	</div>
 </aside>
 
 <style>
 	.tips-panel {
 		width: 300px;
-		background: var(--color-surface-card, #fffaf2);
+		background-color: var(--color-surface-card, #fffaf2);
 		border-left: 1px solid var(--color-bot-border, #e5e2dc);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		flex-shrink: 0;
+		transition: width 0.25s ease-in-out, border-color 0.25s ease-in-out, background-color 0.25s ease-in-out, color 0.25s ease-in-out;
+	}
+
+	.tips-panel.closed {
+		width: 0;
+		border-left-color: transparent;
+	}
+
+	.panel-content {
+		width: 300px;
+		height: 100%;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;

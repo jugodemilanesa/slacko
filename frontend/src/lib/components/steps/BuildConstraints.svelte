@@ -387,20 +387,16 @@
 		align-items: center;
 		gap: 0.6rem;
 		padding: 0.65rem 0.8rem;
-		background: var(--color-surface-warm, #fff7e8);
+		background: var(--color-surface-warm);
 		border: 1px solid var(--color-bot-border);
 		border-left: 3px solid var(--color-primary);
 		border-radius: 0 8px 8px 0;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.constraint-row.is-editing {
 		border-left-color: var(--color-accent);
-		background: linear-gradient(
-			to right,
-			rgba(212, 168, 83, 0.12),
-			rgba(212, 168, 83, 0.02)
-		);
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 		box-shadow: 0 0 0 1px var(--color-accent);
 	}
 
@@ -435,7 +431,7 @@
 		display: flex;
 		gap: 0.25rem;
 		opacity: 0.55;
-		transition: opacity 0.15s ease;
+		transition: opacity 0.25s ease-in-out;
 	}
 
 	.constraint-row:hover .row-actions {
@@ -456,11 +452,11 @@
 		line-height: 1;
 		color: var(--color-ink-muted);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.action-btn:hover {
-		background: white;
+		background: var(--color-surface-card);
 		border-color: var(--color-ink);
 		color: var(--color-ink);
 	}
@@ -498,14 +494,14 @@
 		font-size: 0.8rem;
 		color: var(--color-ink-muted);
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.mode-tab.active {
-		background: white;
+		background: var(--color-surface-card);
 		color: var(--color-ink);
 		box-shadow: 0 1px 0 var(--color-bot-border),
-			0 4px 12px -8px rgba(26, 26, 46, 0.18);
+			0 4px 12px -8px color-mix(in srgb, var(--color-ink) 18%, transparent);
 	}
 
 	.tab-glyph {
@@ -517,7 +513,7 @@
 
 	.form-card {
 		padding: 1rem;
-		background: white;
+		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 12px;
 		display: flex;
@@ -530,8 +526,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.4rem 0.65rem;
-		background: rgba(212, 168, 83, 0.1);
-		border: 1px solid rgba(212, 168, 83, 0.4);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
 		border-radius: 6px;
 		margin: -0.25rem -0.25rem 0.25rem -0.25rem;
 	}
@@ -566,6 +562,7 @@
 	}
 
 	.lbl {
+		display: block;
 		font-size: 0.7rem;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.25rem;
@@ -578,8 +575,22 @@
 		border-radius: 8px;
 		border: 1px solid var(--color-bot-border);
 		font-size: 0.85rem;
-		background: white;
+		background: var(--color-surface-card);
+		color: var(--color-ink);
 		font-family: inherit;
+		height: 38px;
+		box-sizing: border-box;
+	}
+
+	.text-input::placeholder,
+	.num-input::placeholder {
+		color: var(--color-ink-muted);
+		opacity: 0.5;
+	}
+
+	.num-input option {
+		background: var(--color-surface-card);
+		color: var(--color-ink);
 	}
 
 	.num-input {
@@ -589,7 +600,7 @@
 	.text-input:focus,
 	.num-input:focus {
 		outline: none;
-		box-shadow: 0 0 0 3px rgba(59, 76, 192, 0.15);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 		border-color: var(--color-primary);
 	}
 
@@ -603,17 +614,21 @@
 	.add-btn {
 		padding: 0.55rem 1rem;
 		background: var(--color-ink);
-		color: white;
+		color: var(--color-surface-card);
 		border: none;
 		border-radius: 8px;
 		font-family: var(--font-body);
 		font-size: 0.8rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all 0.25s ease-in-out;
 		white-space: nowrap;
-		height: fit-content;
+		height: 38px;
+		box-sizing: border-box;
 		align-self: end;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.add-btn:hover:not(:disabled) {
@@ -670,11 +685,8 @@
 		align-items: center;
 		gap: 0.25rem;
 		padding: 0.85rem 1rem;
-		background: linear-gradient(
-			180deg,
-			var(--color-surface-card, #fffaf2),
-			var(--color-surface-warm, #fff7e8)
-		);
+		background: var(--color-surface-warm);
+		border: 1px solid var(--color-bot-border);
 		border-radius: 10px;
 		border-left: 3px solid var(--color-accent);
 	}
@@ -712,7 +724,7 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;

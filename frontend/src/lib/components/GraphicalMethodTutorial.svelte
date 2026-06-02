@@ -213,36 +213,34 @@
 	.tutorial {
 		display: grid;
 		grid-template-columns: 64px 1fr;
-		background: var(--color-surface-card);
+		background-color: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 14px;
 		overflow: hidden;
 		box-shadow: 0 1px 0 rgba(26, 26, 46, 0.02),
 			0 18px 38px -22px rgba(26, 26, 46, 0.22);
 		animation: fadeUp 0.3s ease-out;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
 	}
 
 	.spine {
-		background: linear-gradient(
-			180deg,
-			rgba(212, 168, 83, 0.1),
-			rgba(59, 76, 192, 0.05) 60%,
-			rgba(212, 168, 83, 0.08)
-		);
+		background-color: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface-card));
 		border-right: 1px solid var(--color-bot-border);
 		padding: 1.5rem 0.5rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 1.5rem;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
 	}
 
 	.spine-rule {
 		width: 1px;
 		flex: 1;
-		background: var(--color-accent);
+		background-color: var(--color-accent);
 		opacity: 0.35;
 		margin-top: 0.5rem;
+		transition: background-color 0.25s ease-in-out;
 	}
 
 	.spine-meta {
@@ -253,6 +251,7 @@
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
 		color: var(--color-accent);
+		transition: color 0.25s ease-in-out;
 	}
 
 	.spine-num {
@@ -261,6 +260,7 @@
 		color: var(--color-accent);
 		opacity: 0.8;
 		line-height: 1;
+		transition: color 0.25s ease-in-out;
 	}
 
 	.body {
@@ -314,6 +314,7 @@
 		gap: 0.85rem;
 		padding: 1.1rem 0;
 		border-bottom: 1px dashed var(--color-bot-border);
+		transition: border-color 0.25s ease-in-out;
 	}
 	.step:last-of-type {
 		border-bottom: none;
@@ -337,8 +338,9 @@
 		align-items: center;
 		justify-content: center;
 		border: 1px solid var(--color-accent);
-		background: var(--color-surface-warm, #fffaf2);
+		background-color: var(--color-surface-warm, #fffaf2);
 		letter-spacing: 0;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.step-title {
@@ -360,10 +362,11 @@
 	.step-content code {
 		font-family: var(--font-mono);
 		font-size: 0.85em;
-		background: rgba(26, 26, 46, 0.05);
+		background-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
 		padding: 0.05em 0.4em;
 		border-radius: 3px;
 		color: var(--color-ink);
+		transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.bullets {
@@ -386,11 +389,12 @@
 	}
 
 	.worked > li {
-		background: var(--color-surface-warm, #fffaf2);
+		background-color: var(--color-surface-warm, #fffaf2);
 		border: 1px solid var(--color-bot-border);
 		border-left: 3px solid var(--color-primary);
 		border-radius: 0 6px 6px 0;
 		padding: 0.7rem 0.9rem 0.8rem 0.85rem;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.worked-head {
@@ -446,8 +450,9 @@
 		color: var(--color-primary);
 		margin-left: auto;
 		padding: 0.1rem 0.5rem;
-		background: rgba(59, 76, 192, 0.06);
+		background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
 		border-radius: 4px;
+		transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
 	}
 
 	.cta-row {
@@ -481,22 +486,24 @@
 		font-family: var(--font-body);
 		font-size: 0.85rem;
 		font-weight: 500;
-		background: var(--color-ink);
-		color: white;
-		border: none;
+		background-color: var(--color-surface-card);
+		color: var(--color-ink);
+		border: 1px solid var(--color-bot-border);
 		padding: 0.7rem 1.2rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
 
 	.cta-btn:hover {
-		background: var(--color-primary);
+		background-color: var(--color-primary);
+		color: white;
+		border-color: var(--color-primary);
 		transform: translateY(-1px);
-		box-shadow: 0 6px 14px -6px rgba(59, 76, 192, 0.4);
+		box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--color-primary) 40%, transparent);
 	}
 
 	.cta-btn:hover .arrow {
@@ -505,7 +512,7 @@
 
 	.arrow {
 		font-family: var(--font-display);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	@keyframes fadeUp {

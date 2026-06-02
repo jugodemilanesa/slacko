@@ -31,6 +31,7 @@
 	--color-bot-border: #e5e2dc;
 	--color-user-bg: #3b4cc0;
 	--color-user-text: #ffffff;
+	--color-sweep: #b5831b;
 }
 
 * {
@@ -51,6 +52,17 @@ body {
 	background: var(--color-surface-warm);
 	padding: 2px 6px;
 	border-radius: 4px;
+}
+
+/* Hide number input spin buttons */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+input[type='number'] {
+	-moz-appearance: textfield;
+	appearance: textfield;
 }
 
 /* Scroll styling */
@@ -118,6 +130,7 @@ body {
 	--color-bot-border: #22223b;
 	--color-user-bg: #5263e7;
 	--color-user-text: #ffffff;
+	--color-sweep: var(--color-accent);
 }
 
 /* Global transitions for theme changes (fadein/fadeout) */
@@ -144,7 +157,11 @@ select,
 label,
 svg,
 circle,
-path {
+path,
+article,
+section,
+li,
+code {
 	transition-property: background-color, border-color, color, text-decoration-color, fill, stroke, box-shadow;
 	transition-duration: 0.25s;
 	transition-timing-function: ease-in-out;
@@ -155,8 +172,50 @@ path {
 	transition: opacity 0.25s ease-in-out;
 }
 
+/* Crossfade background image visibility helper classes */
+.light-bg-image {
+	opacity: 1;
+}
+.dark .light-bg-image {
+	opacity: 0;
+}
+
+.dark-bg-image {
+	opacity: 0;
+}
+.dark .dark-bg-image {
+	opacity: 1;
+}
+
 /* Disable transitions on load/preload to prevent theme transition flash */
 .preload,
 .preload * {
 	transition: none !important;
+}
+
+/* Step text flash sweep animation */
+.step-text.flash-sweep {
+	background: linear-gradient(
+		90deg,
+		var(--color-ink-muted) 0%,
+		var(--color-ink-muted) 35%,
+		var(--color-sweep) 50%,
+		var(--color-ink-muted) 65%,
+		var(--color-ink-muted) 100%
+	);
+	background-size: 300% 100%;
+	background-position: 150% 0;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	animation: sweep-flash 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes sweep-flash {
+	0% {
+		background-position: 150% 0;
+	}
+	100% {
+		background-position: -50% 0;
+	}
 }

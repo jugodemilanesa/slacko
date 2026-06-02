@@ -913,14 +913,14 @@
 	.kpi {
 		text-align: center;
 		padding: 0.6rem 0.5rem 0.7rem 0.5rem;
-		background: white;
+		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 10px;
 	}
 
 	.kpi.z {
 		background: var(--color-ink);
-		color: white;
+		color: var(--color-surface-card);
 		border-color: var(--color-ink);
 	}
 
@@ -929,11 +929,11 @@
 		font-style: italic;
 		font-size: 0.75rem;
 		color: var(--color-ink-muted);
-		margin-bottom: 0.2rem;
+		margin-bottom: 0.25rem;
 	}
 
 	.kpi.z .kpi-label {
-		color: rgba(255, 255, 255, 0.7);
+		color: color-mix(in srgb, var(--color-surface-card) 70%, transparent);
 	}
 
 	.kpi-value {
@@ -959,7 +959,7 @@
 	}
 
 	.kpi.z .kpi-meta {
-		color: rgba(255, 255, 255, 0.5);
+		color: color-mix(in srgb, var(--color-surface-card) 50%, transparent);
 	}
 
 	.closing {
@@ -1034,29 +1034,29 @@
 		gap: 0.5rem;
 		padding: 0.7rem 1.5rem;
 		background: var(--color-ink);
-		color: white;
+		color: var(--color-surface-card);
 		border: none;
 		border-radius: 999px;
 		font-family: var(--font-body);
 		font-size: 0.85rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.next-btn:hover {
 		background: var(--color-primary);
 		transform: translateY(-2px);
-		box-shadow: 0 8px 22px -10px rgba(59, 76, 192, 0.5);
+		box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--color-primary) 50%, transparent);
 	}
 
 	.next-btn .arrow {
 		font-family: var(--font-display);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	.next-btn:hover .arrow {
-		transform: translateY(2px);
+		transform: translateX(3px);
 	}
 
 	.composer-hint {

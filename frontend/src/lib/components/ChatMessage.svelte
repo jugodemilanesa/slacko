@@ -22,7 +22,7 @@
 			class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-ink-muted
 				bg-surface-warm px-3 py-1 rounded-full border border-bot-border"
 		>
-			◆ {content}
+			<span class="step-text">◆ {content}</span>
 		</span>
 		<div class="flex-1 h-px bg-bot-border"></div>
 	</div>

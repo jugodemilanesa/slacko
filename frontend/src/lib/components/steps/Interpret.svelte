@@ -343,7 +343,7 @@
 		gap: 0.65rem;
 		align-items: center;
 		padding: 0.55rem 0.85rem 0.6rem 0.55rem;
-		background: white;
+		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-left: 3px solid transparent;
 		border-radius: 0 8px 8px 0;
