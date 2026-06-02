@@ -333,16 +333,16 @@
 						{#if $currentState === 'SELECT_MODE'}
 							<!-- Background Image at the top of the main menu with a gradient fading to the page background (crossfaded between themes) -->
 							<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden">
-								<!-- Light mode background (static base) -->
-								<div class="absolute inset-0">
+								<!-- Light mode background -->
+								<div class="absolute inset-0 light-bg-image bg-crossfade-container">
 									<img src="/background.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
-									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, #faf9f7 100%);"></div>
+									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
 								</div>
 								
-								<!-- Dark mode background (transitions on top) -->
-								<div class="absolute inset-0 bg-crossfade-container {$isDarkMode ? 'opacity-100' : 'opacity-0'}">
+								<!-- Dark mode background -->
+								<div class="absolute inset-0 dark-bg-image bg-crossfade-container">
 									<img src="/background-dark.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
-									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, #0b0b14 100%);"></div>
+									<div class="absolute inset-0" style="background: linear-gradient(to bottom, transparent 0%, transparent 40%, var(--color-surface) 100%);"></div>
 								</div>
 							</div>
 
@@ -455,6 +455,20 @@
 
 	:global(.dark) .cursor-blink {
 		background-color: var(--color-accent);
+	}
+
+	.light-bg-image {
+		opacity: 1;
+	}
+	:global(.dark) .light-bg-image {
+		opacity: 0;
+	}
+
+	.dark-bg-image {
+		opacity: 0;
+	}
+	:global(.dark) .dark-bg-image {
+		opacity: 1;
 	}
 
 

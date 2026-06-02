@@ -189,7 +189,7 @@
 		border-radius: 999px;
 		border: 1px solid var(--color-bot-border);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all 0.25s ease-in-out;
 		background: transparent;
 	}
 
@@ -208,7 +208,7 @@
 		border: none;
 		padding: 0.25rem 0.5rem;
 		border-radius: 4px;
-		transition: color 0.15s ease;
+		transition: color 0.25s ease-in-out;
 		text-decoration: underline;
 		text-decoration-style: dotted;
 		text-underline-offset: 3px;
@@ -356,7 +356,7 @@
 		border-radius: 8px;
 		padding: 0.85rem 1rem;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 		overflow: hidden;
 	}
 
@@ -369,7 +369,7 @@
 		width: 2px;
 		background: var(--color-accent);
 		transform: scaleY(0);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 		transform-origin: top;
 	}
 
@@ -407,7 +407,7 @@
 		right: 0.85rem;
 		color: var(--color-ink-muted);
 		opacity: 0;
-		transition: opacity 0.18s, transform 0.18s;
+		transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
 		font-family: var(--font-display);
 	}
 

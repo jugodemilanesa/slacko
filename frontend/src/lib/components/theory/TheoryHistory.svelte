@@ -77,7 +77,7 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		transition: color 0.15s ease;
+		transition: color 0.25s ease-in-out;
 		text-align: left;
 	}
 

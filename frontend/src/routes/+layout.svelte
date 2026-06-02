@@ -1,8 +1,16 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import '../app.css';
 	import '$lib/stores/theme';
 
 	let { children } = $props();
+
+	onMount(() => {
+		const t = setTimeout(() => {
+			document.body.classList.remove('preload');
+		}, 100);
+		return () => clearTimeout(t);
+	});
 </script>
 
 <svelte:head>

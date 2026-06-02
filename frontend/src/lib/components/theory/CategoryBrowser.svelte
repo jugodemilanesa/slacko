@@ -114,7 +114,7 @@
 		text-align: left;
 		cursor: pointer;
 		border-bottom: 1px solid transparent;
-		transition: border-color 0.2s ease;
+		transition: border-color 0.25s ease-in-out;
 	}
 
 	.toc-row:hover {
@@ -166,7 +166,7 @@
 		font-family: var(--font-display);
 		font-size: 1.1rem;
 		color: var(--color-ink-muted);
-		transition: transform 0.25s ease;
+		transition: transform 0.25s ease-in-out, color 0.25s ease-in-out;
 		display: inline-block;
 		line-height: 1;
 	}
@@ -203,7 +203,7 @@
 		font-size: 0.875rem;
 		color: var(--color-ink-light);
 		cursor: pointer;
-		transition: color 0.15s ease, transform 0.15s ease;
+		transition: color 0.25s ease-in-out, transform 0.25s ease-in-out;
 	}
 
 	.toc-child:hover {

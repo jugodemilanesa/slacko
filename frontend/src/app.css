@@ -127,6 +127,7 @@ aside,
 main,
 footer,
 div,
+form,
 p,
 span,
 h1,
@@ -152,4 +153,10 @@ path {
 /* Background crossfade container transition matching exactly the theme transition */
 .bg-crossfade-container {
 	transition: opacity 0.25s ease-in-out;
+}
+
+/* Disable transitions on load/preload to prevent theme transition flash */
+.preload,
+.preload * {
+	transition: none !important;
 }

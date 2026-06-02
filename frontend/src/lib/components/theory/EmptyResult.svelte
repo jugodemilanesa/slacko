@@ -126,7 +126,7 @@
 		border-radius: 6px;
 		padding: 0.75rem 1rem;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.suggestion:hover {

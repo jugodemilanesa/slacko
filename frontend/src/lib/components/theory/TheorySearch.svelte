@@ -187,7 +187,7 @@
 		border-radius: 14px;
 		padding: 1rem 1.25rem 1.1rem 1.25rem;
 		box-shadow: 0 12px 24px -16px rgba(26, 26, 46, 0.18);
-		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
 	}
 
 	.search:focus-within {
@@ -245,7 +245,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
-		transition: all 0.15s ease;
+		transition: all 0.25s ease-in-out;
 		align-self: center;
 	}
 
@@ -264,7 +264,7 @@
 		font-family: var(--font-display);
 		font-size: 1.1rem;
 		line-height: 1;
-		transition: transform 0.15s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	.submit:hover:not(:disabled) .arrow {

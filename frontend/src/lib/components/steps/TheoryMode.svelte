@@ -413,15 +413,15 @@
 		top: 0;
 		z-index: 5;
 		padding: 1rem 1.5rem 0.85rem 1.5rem;
-		transition: padding 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+		transition: padding 0.3s ease, background 0.25s ease-in-out, border-color 0.25s ease-in-out;
 	}
 
 	.th-header.compact {
 		padding: 0.55rem 1.5rem;
 		background: linear-gradient(
 			to bottom,
-			rgba(255, 250, 242, 0.96),
-			rgba(255, 250, 242, 0.85)
+			color-mix(in srgb, var(--color-surface) 96%, transparent),
+			color-mix(in srgb, var(--color-surface) 85%, transparent)
 		);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
@@ -485,7 +485,7 @@
 		padding: 0.45rem 0.95rem;
 		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.18s ease;
+		transition: all 0.25s ease-in-out;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
@@ -500,7 +500,7 @@
 	}
 
 	.th-btn.ghost {
-		background: white;
+		background: var(--color-surface-card);
 	}
 
 	.th-btn.subtle {
@@ -684,19 +684,21 @@
 		align-items: center;
 		gap: 0.6rem;
 		padding: 0.75rem 1.35rem;
-		background: var(--color-ink);
-		color: white;
-		border: none;
+		background: var(--color-surface-card);
+		color: var(--color-ink);
+		border: 1px solid var(--color-bot-border);
 		border-radius: 999px;
 		font-family: var(--font-body);
 		font-size: 0.88rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all 0.25s ease-in-out;
 	}
 
 	.hero-cta:hover {
 		background: var(--color-primary);
+		color: var(--color-user-text);
+		border-color: var(--color-primary);
 		transform: translateY(-2px);
 		box-shadow: 0 10px 28px -12px rgba(59, 76, 192, 0.55);
 	}
@@ -711,7 +713,7 @@
 
 	.cta-arrow {
 		font-family: var(--font-display);
-		transition: transform 0.18s ease;
+		transition: transform 0.25s ease-in-out;
 	}
 
 	.hero-cta:hover .cta-arrow {
@@ -961,7 +963,7 @@
 		box-shadow: -24px 0 60px -32px rgba(26, 26, 46, 0.35);
 		z-index: 51;
 		transform: translateX(100%);
-		transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+		transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.25s ease-in-out, border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
 		display: flex;
 		flex-direction: column;
 	}
@@ -1006,7 +1008,7 @@
 		height: 36px;
 		border-radius: 50%;
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all 0.25s ease-in-out;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
