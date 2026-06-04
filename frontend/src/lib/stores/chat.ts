@@ -67,6 +67,7 @@ export interface ChatMessage {
 	content: string;
 	step?: ChatState;
 	expression?: Expression;
+	animate?: boolean;
 }
 
 export interface TipEntry {
@@ -157,11 +158,12 @@ export function addMessage(
 	role: 'assistant' | 'user' | 'divider',
 	content: string,
 	step?: ChatState,
-	expression?: Expression
+	expression?: Expression,
+	animate: boolean = true
 ) {
 	messages.update((msgs) => [
 		...msgs,
-		{ id: generateId(), role, content, step, expression }
+		{ id: generateId(), role, content, step, expression, animate }
 	]);
 }
 
@@ -194,7 +196,7 @@ export async function sendAssistantMessage(
 	return new Promise((resolve) => {
 		activeAssistantTimeout = setTimeout(() => {
 			assistantThinking.set(false);
-			addMessage('assistant', content, opts.step, opts.expression ?? 'idle');
+			addMessage('assistant', content, opts.step, opts.expression ?? 'idle', true);
 			activeAssistantTimeout = null;
 			resolve();
 		}, delay);
@@ -273,6 +275,7 @@ export function restoreGuidedState(): boolean {
 	if (!raw) return false;
 	try {
 		const saved: PersistedGuidedState = JSON.parse(raw);
+		saved.messages = saved.messages.map(m => ({ ...m, animate: false }));
 		currentState.set(saved.currentState);
 		messages.set(saved.messages);
 		model.set(saved.model);

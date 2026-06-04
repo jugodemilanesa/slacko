@@ -1,6 +1,9 @@
 <script lang="ts">
 	import SlakingAvatar from './SlakingAvatar.svelte';
 	import type { Expression, ChatState } from '$lib/stores/chat';
+	import { onMount } from 'svelte';
+	import katex from 'katex';
+	import 'katex/dist/katex.min.css';
 
 	let {
 		role,
@@ -20,55 +23,84 @@
 	let finalWidth = $state<number | null>(null);
 
 	const fullHtml = $derived(
-		(content || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>')
+		(content || '')
+			.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+			.replace(/\$\$(.*?)\$\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: true, throwOnError: false });
+				} catch {
+					return `$$${math}$$`;
+				}
+			})
+			.replace(/\$(.*?)\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: false, throwOnError: false });
+				} catch {
+					return `$${math}$`;
+				}
+			})
+			.replace(/\n/g, '<br/>')
 	);
 
-	$effect(() => {
+	onMount(() => {
 		if (animate && role === 'assistant') {
-			let tokens: { char: string; isBold: boolean }[] = [];
-			let isBold = false;
-			let text = content || '';
-			for (let i = 0; i < text.length; i++) {
-				if (text[i] === '*' && text[i + 1] === '*') {
-					isBold = !isBold;
+			let tokens: string[] = [];
+			let parsed = fullHtml;
+			let i = 0;
+			while (i < parsed.length) {
+				if (parsed[i] === '<') {
+					let start = i;
+					while (i < parsed.length && parsed[i] !== '>') i++;
+					tokens.push(parsed.slice(start, i + 1));
 					i++;
-					continue;
-				}
-				if (text[i] === '\n') {
-					tokens.push({ char: '<br/>', isBold });
-					continue;
-				}
-				let char = String.fromCodePoint(text.codePointAt(i) || text.charCodeAt(i));
-				tokens.push({ char, isBold });
-				if (char.length > 1) {
-					i += char.length - 1;
+				} else if (parsed[i] === '&') {
+					let start = i;
+					while (i < parsed.length && parsed[i] !== ';') i++;
+					tokens.push(parsed.slice(start, i + 1));
+					i++;
+				} else {
+					let char = String.fromCodePoint(parsed.codePointAt(i) || parsed.charCodeAt(i));
+					tokens.push(char);
+					if (char.length > 1) i += char.length;
+					else i++;
 				}
 			}
 
+			let totalVisible = tokens.filter((t) => !t.startsWith('<')).length;
 			let length = 0;
-			displayedHtml = '';
+			let visibleLength = 0;
+			let html = '';
+
+			while (length < tokens.length && tokens[length].startsWith('<')) {
+				html += tokens[length];
+				length++;
+			}
+			displayedHtml = html;
+
+			const speed = 180; // chars por segundo
+			const startTime = Date.now();
+
 			const interval = setInterval(() => {
-				if (length <= tokens.length) {
-					let html = '';
-					let currentlyBold = false;
-					for (let i = 0; i < length; i++) {
-						if (tokens[i].isBold && !currentlyBold) {
-							html += '<strong>';
-							currentlyBold = true;
-						}
-						if (!tokens[i].isBold && currentlyBold) {
-							html += '</strong>';
-							currentlyBold = false;
-						}
-						html += tokens[i].char;
-					}
-					if (currentlyBold) html += '</strong>';
-					displayedHtml = html;
+				const elapsed = (Date.now() - startTime) / 1000;
+				const targetVisible = Math.floor(elapsed * speed);
+
+				while (visibleLength < targetVisible && length < tokens.length) {
+					html += tokens[length];
+					if (!tokens[length].startsWith('<')) visibleLength++;
 					length++;
-				} else {
+
+					while (length < tokens.length && tokens[length].startsWith('<')) {
+						html += tokens[length];
+						length++;
+					}
+				}
+
+				displayedHtml = html;
+
+				if (length >= tokens.length) {
 					clearInterval(interval);
 				}
-			}, 1000 / 90); // 90 chars per second
+			}, 16);
 
 			return () => clearInterval(interval);
 		} else {

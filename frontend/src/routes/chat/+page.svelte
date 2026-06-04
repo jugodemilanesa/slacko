@@ -539,7 +539,7 @@
 						{:else}
 							<!-- Rendered messages (con expresión por mensaje) -->
 							{#each $messages as msg (msg.id)}
-								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={$currentState === 'SELECT_MODE'} />
+								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={msg.animate ?? false} />
 							{/each}
 
 							<!-- Indicador de tipeo mientras Slacko 'piensa' -->

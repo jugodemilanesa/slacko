@@ -5,14 +5,24 @@
 	import { objectiveLatex } from '$lib/math/formula';
 
 	let var1Label = $state('');
-	let var1Coeff = $state<number | string>('');
+	let var1Coeff = $state('');
 	let var2Label = $state('');
-	let var2Coeff = $state<number | string>('');
+	let var2Coeff = $state('');
+
+	function isValidNumber(val: string) {
+		if (val.trim() === '') return false;
+		return !isNaN(Number(val));
+	}
+
+	function isInvalidInput(val: string) {
+		if (val.trim() === '') return false;
+		return isNaN(Number(val));
+	}
 
 	const preview = $derived.by(() => {
 		const m = get(model);
-		const c1 = var1Coeff === '' ? 0 : Number(var1Coeff);
-		const c2 = var2Coeff === '' ? 0 : Number(var2Coeff);
+		const c1 = isValidNumber(var1Coeff) ? Number(var1Coeff) : 0;
+		const c2 = isValidNumber(var2Coeff) ? Number(var2Coeff) : 0;
 		const draftModel = {
 			...m,
 			variables: [
@@ -24,7 +34,7 @@
 	});
 
 	async function submit() {
-		if (!var1Label.trim() || !var2Label.trim() || var1Coeff === '' || var2Coeff === '') return;
+		if (!var1Label.trim() || !var2Label.trim() || !isValidNumber(var1Coeff) || !isValidNumber(var2Coeff)) return;
 
 		const c1 = Number(var1Coeff);
 		const c2 = Number(var2Coeff);
@@ -38,7 +48,6 @@
 		}));
 
 		const m = get(model);
-		const sense = m.sense === 'maximize' ? 'Max' : 'Min';
 
 		addMessage(
 			'user',
@@ -46,7 +55,7 @@
 		);
 		advanceState();
 		await sendAssistantMessage(
-			`La función objetivo queda: **${sense} Z = ${c1}x1 + ${c2}x2**\n\nAhora vamos con las **restricciones**. Ingresá cada una con su etiqueta, coeficientes, signo y valor límite.`,
+			`La función objetivo queda: $${objectiveLatex(m)}$\n\nAhora vamos con las **restricciones**. Ingresá cada una con su etiqueta, coeficientes, signo y valor límite.`,
 			{ delay: 750, expression: 'happy' }
 		);
 	}
@@ -81,13 +90,12 @@
 				</label>
 				<input
 					id="var1-coef"
-					type="number"
+					type="text"
 					bind:value={var1Coeff}
 					placeholder="ej: 2"
-					step="any"
 					inputmode="decimal"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink font-mono
-						focus:outline-none focus:ring-2 focus:ring-primary/30"
+					class="w-full px-3 py-2 rounded-lg border text-sm font-mono focus:outline-none focus:ring-2 transition-colors
+						{isInvalidInput(var1Coeff) ? 'border-red-500/60 bg-red-500/10 text-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-bot-border bg-surface-card text-ink focus:ring-primary/30'}"
 				/>
 			</div>
 		</div>
@@ -114,13 +122,12 @@
 				</label>
 				<input
 					id="var2-coef"
-					type="number"
+					type="text"
 					bind:value={var2Coeff}
 					placeholder="ej: 4"
-					step="any"
 					inputmode="decimal"
-					class="w-full px-3 py-2 rounded-lg border border-bot-border text-sm bg-surface-card text-ink font-mono
-						focus:outline-none focus:ring-2 focus:ring-primary/30"
+					class="w-full px-3 py-2 rounded-lg border text-sm font-mono focus:outline-none focus:ring-2 transition-colors
+						{isInvalidInput(var2Coeff) ? 'border-red-500/60 bg-red-500/10 text-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-bot-border bg-surface-card text-ink focus:ring-primary/30'}"
 				/>
 			</div>
 		</div>
@@ -133,11 +140,28 @@
 			Función objetivo
 		</div>
 		<Latex expr={preview} display />
+
+		{#if var1Label.trim() || var2Label.trim()}
+			<div class="mt-3 pt-3 border-t border-bot-border/50 text-sm">
+				{#if var1Label.trim()}
+					<div class="flex items-center gap-1.5 mb-1.5">
+						<Latex expr="x_1" /> 
+						<span class="text-ink-muted">: {var1Label.trim()}</span>
+					</div>
+				{/if}
+				{#if var2Label.trim()}
+					<div class="flex items-center gap-1.5">
+						<Latex expr="x_2" /> 
+						<span class="text-ink-muted">: {var2Label.trim()}</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	<button
 		onclick={submit}
-		disabled={!var1Label.trim() || !var2Label.trim() || var1Coeff === '' || var2Coeff === ''}
+		disabled={!var1Label.trim() || !var2Label.trim() || !isValidNumber(var1Coeff) || !isValidNumber(var2Coeff)}
 		class="w-full py-2.5 bg-primary text-white rounded-lg text-sm font-medium
 			hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
 	>

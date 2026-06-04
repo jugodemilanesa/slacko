@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { addMessage, advanceState, goToState, sendAssistantMessage } from '$lib/stores/chat';
+	import { messages, advanceState, goToState, sendAssistantMessage } from '$lib/stores/chat';
 
 	function selectLLMChat() {
 		goToState('LLM_CHAT');
 	}
 
 	async function selectGuided() {
-		addMessage('user', 'Quiero resolver paso a paso');
+		messages.set([]);
 		advanceState();
 		await sendAssistantMessage(
-			'Perfecto, vamos a ir armando el modelo juntos. Para empezar, **pegá el enunciado del problema** que querés resolver.',
+			'¡Bienvenido al modo de resolución paso a paso! Vamos a ir armando el modelo juntos. Para empezar, pegá el enunciado del problema que querés resolver.',
 			{ delay: 700, expression: 'explain' }
 		);
 	}
