@@ -73,10 +73,9 @@
 	}
 
 	.name {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink);
 		font-weight: 500;
 	}

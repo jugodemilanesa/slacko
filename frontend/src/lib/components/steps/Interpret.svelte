@@ -79,7 +79,7 @@
 	<!-- The interpretation card -->
 	<article class="interp">
 		<header class="interp-head">
-			<span class="overline">Interpretación</span>
+			<span class="super-title">Interpretación</span>
 			<h2 class="title">
 				<span class="drop">L</span>a recomendación
 			</h2>
@@ -194,11 +194,10 @@
 		padding-bottom: 0.65rem;
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		display: block;
 		margin-bottom: 0.25rem;
@@ -281,10 +280,9 @@
 	}
 
 	.kpi-meta {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-top: 0.2rem;
 	}

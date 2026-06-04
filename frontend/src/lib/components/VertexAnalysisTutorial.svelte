@@ -14,15 +14,9 @@
 </script>
 
 <article class="tutorial">
-	<aside class="spine">
-		<div class="spine-rule"></div>
-		<div class="spine-meta">Lección</div>
-		<div class="spine-num">02</div>
-	</aside>
-
 	<div class="body">
 		<header class="lead">
-			<div class="overline">Antes del análisis de vértices</div>
+			<div class="super-title">Antes del análisis de vértices</div>
 			<h2 class="title">
 				<span class="drop">L</span>os vértices, uno por uno
 			</h2>
@@ -97,8 +91,6 @@
 
 <style>
 	.tutorial {
-		display: grid;
-		grid-template-columns: 64px 1fr;
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 14px;
@@ -108,46 +100,6 @@
 		animation: fadeUp 0.3s ease-out;
 	}
 
-	.spine {
-		background: linear-gradient(
-			180deg,
-			rgba(59, 76, 192, 0.08),
-			rgba(212, 168, 83, 0.08) 60%,
-			rgba(59, 76, 192, 0.05)
-		);
-		border-right: 1px solid var(--color-bot-border);
-		padding: 1.5rem 0.5rem;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.5rem;
-	}
-
-	.spine-rule {
-		width: 1px;
-		flex: 1;
-		background: var(--color-primary);
-		opacity: 0.35;
-		margin-top: 0.5rem;
-	}
-
-	.spine-meta {
-		writing-mode: vertical-rl;
-		transform: rotate(180deg);
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
-		color: var(--color-primary);
-	}
-
-	.spine-num {
-		font-family: var(--font-display);
-		font-size: 1.6rem;
-		color: var(--color-primary);
-		opacity: 0.8;
-		line-height: 1;
-	}
 
 	.body {
 		padding: 1.75rem 2rem 1.5rem 1.5rem;
@@ -159,11 +111,10 @@
 		padding-bottom: 1rem;
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-primary);
 		margin-bottom: 0.4rem;
 	}
@@ -315,14 +266,8 @@
 	}
 
 	@media (max-width: 640px) {
-		.tutorial {
-			grid-template-columns: 40px 1fr;
-		}
 		.body {
 			padding: 1.25rem 1rem 1.1rem 0.9rem;
-		}
-		.spine {
-			padding: 1rem 0.3rem;
 		}
 	}
 </style>

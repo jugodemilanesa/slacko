@@ -36,7 +36,7 @@
 		<span class="orbit"></span>
 	</div>
 	<div class="body">
-		<div class="overline">
+		<div class="super-title">
 			<span>{label}</span>
 		</div>
 		{#if modelPreview.objective}
@@ -116,11 +116,10 @@
 		box-shadow: 0 0 0 2px var(--color-surface-card);
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-success);
 		margin-bottom: 0.4rem;
 	}

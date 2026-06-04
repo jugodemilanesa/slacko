@@ -444,23 +444,11 @@
 					{#if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
 						<header class="secondary-header">
 							<div class="lh-inner">
-								<div class="lh-left">
-									<span class="title">Paso {$currentStepIndex + 1}: {STEP_LABELS[$currentState]}</span>
-									<div class="w-[120px] sm:w-[180px] md:w-[240px]">
+								<div class="lh-left flex-1 w-full">
+									<span class="title shrink-0">Paso {$currentStepIndex + 1}: {STEP_LABELS[$currentState]}</span>
+									<div class="flex-1 min-w-0">
 										<ProgressBar />
 									</div>
-								</div>
-
-								<div class="lh-right">
-									<button
-										type="button"
-										class="lh-btn cursor-pointer"
-										onclick={handleNewChat}
-										title="Reiniciar y volver al menú principal"
-									>
-										<span class="btn-glyph">↺</span>
-										Reiniciar
-									</button>
 								</div>
 							</div>
 						</header>
@@ -657,7 +645,7 @@
 	.secondary-header {
 		position: relative;
 		z-index: 5;
-		padding: 0.55rem 1.5rem;
+		padding: 0.9rem 1.5rem;
 		background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
@@ -678,18 +666,18 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		min-width: 0;
+		width: 100%;
 	}
 
 	.chip {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink);
 		padding: 0.3rem 0.7rem 0.3rem 0.5rem;
 		border-radius: 999px;
@@ -743,37 +731,6 @@
 		white-space: nowrap;
 	}
 
-	.lh-right {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
-	}
-
-	.lh-btn {
-		font-family: var(--font-body);
-		font-size: 0.78rem;
-		padding: 0.42rem 0.9rem;
-		border-radius: 999px;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		border: 1px solid var(--color-bot-border);
-		background: var(--color-surface-card);
-		color: var(--color-ink);
-	}
-
-	.lh-btn:hover {
-		border-color: var(--color-primary);
-		color: var(--color-primary);
-	}
-
-	.btn-glyph {
-		font-family: var(--font-mono);
-		font-size: 0.9rem;
-		color: var(--color-accent);
-		line-height: 1;
-	}
 
 	@keyframes pulse {
 		0%,

@@ -200,7 +200,7 @@
 			<div class="header-left">
 				<SlakingAvatar expression="explain" size="lg" ring floating />
 				<div>
-					<div class="overline">Tutorial · Ejemplo resuelto</div>
+					<div class="super-title">Tutorial · Ejemplo resuelto</div>
 					<h1 class="title">
 						<span class="drop">B</span>alones y ajedrez
 					</h1>
@@ -252,7 +252,7 @@
 							<div class="widget">
 								{#if beat.widget.type === 'enunciado'}
 									<article class="enunciado-card">
-										<div class="card-overline">Enunciado</div>
+										<div class="card-super-title">Enunciado</div>
 										<p>{model.enunciado}</p>
 									</article>
 								{:else if beat.widget.type === 'variables'}
@@ -508,11 +508,10 @@
 		gap: 1rem;
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.15rem;
 	}
@@ -714,11 +713,10 @@
 		padding: 0.85rem 1rem 0.95rem 1rem;
 	}
 
-	.card-overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.card-super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.35rem;
 	}
@@ -950,10 +948,9 @@
 	}
 
 	.kpi-meta {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-top: 0.2rem;
 	}

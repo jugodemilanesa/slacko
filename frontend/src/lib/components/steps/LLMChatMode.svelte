@@ -181,7 +181,7 @@
 			{#if !hasMessages}
 				<!-- Idle hero -->
 				<section class="hero" aria-label="Bienvenida al chat con Slacko">
-					<div class="hero-overline">
+					<div class="hero-super-title">
 						<span class="ov-dot"></span>
 						Chat con Slacko
 						<span class="ov-dot"></span>
@@ -220,7 +220,7 @@
 					</p>
 
 					<div class="suggestions">
-						<div class="sug-overline">Probá con…</div>
+						<div class="sug-super-title">Probá con…</div>
 						<div class="sug-list">
 							{#each SUGGESTIONS as s, i (i)}
 								<button type="button" class="sug" onclick={() => pickSuggestion(s)}>
@@ -417,10 +417,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink);
 		padding: 0.3rem 0.7rem 0.3rem 0.5rem;
 		border-radius: 999px;
@@ -580,14 +579,13 @@
 		align-items: center;
 	}
 
-	.hero-overline {
+	.hero-super-title {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.65rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.3em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 1.5rem;
 	}
@@ -668,11 +666,10 @@
 		text-align: left;
 	}
 
-	.sug-overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
+	.sug-super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.7rem;
 		text-align: center;
@@ -735,10 +732,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 	}
 
@@ -852,10 +848,9 @@
 	}
 
 	.err-label {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-error);
 		margin-bottom: 0.1rem;
 	}

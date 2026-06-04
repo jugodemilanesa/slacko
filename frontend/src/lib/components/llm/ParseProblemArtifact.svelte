@@ -29,7 +29,7 @@
 	<aside class="artifact" aria-label="Enunciado parseado">
 		<div class="rail" aria-hidden="true"></div>
 		<div class="body">
-			<div class="overline">
+			<div class="super-title">
 				<span class="glyph" aria-hidden="true">¶</span>
 				Enunciado interpretado
 			</div>
@@ -79,14 +79,13 @@
 		line-height: 1;
 	}
 
-	.overline {
+	.super-title {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-primary);
 		margin-bottom: 0.4rem;
 	}

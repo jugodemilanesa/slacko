@@ -30,7 +30,7 @@
 		</svg>
 	</div>
 
-	<p class="overline">No reconocí ese tema</p>
+	<p class="super-title">No reconocí ese tema</p>
 	<h2 class="title">«{question}»</h2>
 	<p class="message">{message}</p>
 
@@ -71,7 +71,7 @@
 		justify-content: center;
 	}
 
-	.overline {
+	.super-title {
 		font-family: var(--font-mono);
 		font-size: 0.7rem;
 		letter-spacing: 0.18em;
@@ -103,10 +103,9 @@
 	}
 
 	.suggestions-label {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		text-align: center;
 		margin-bottom: 1rem;

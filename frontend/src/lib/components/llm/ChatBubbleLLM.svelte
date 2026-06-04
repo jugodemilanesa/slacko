@@ -168,7 +168,7 @@
 				<div class="bot-content">
 					{#if error}
 						<div class="err-banner">
-							<div class="err-overline">Falla del LLM — respondí con el matcher determinístico</div>
+							<div class="err-super-title">Falla del LLM — respondí con el matcher determinístico</div>
 							<div class="err-detail">{error}</div>
 						</div>
 					{/if}
@@ -189,7 +189,7 @@
 		<div class="bot-content">
 			{#if error}
 				<div class="err-banner" role="alert">
-					<div class="err-overline">Falla del LLM — respondí con el matcher determinístico</div>
+					<div class="err-super-title">Falla del LLM — respondí con el matcher determinístico</div>
 					<div class="err-detail">{error}</div>
 				</div>
 			{/if}
@@ -679,7 +679,7 @@
 		border-radius: 0 6px 6px 0;
 	}
 
-	.err-overline {
+	.err-super-title {
 		font-family: var(--font-mono);
 		font-size: 0.58rem;
 		letter-spacing: 0.18em;

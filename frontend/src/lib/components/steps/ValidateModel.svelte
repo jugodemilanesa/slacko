@@ -40,7 +40,7 @@
 <div class="step-enter">
 	<article class="model-card">
 		<header class="head">
-			<span class="overline">Modelo completo</span>
+			<span class="super-title">Modelo completo</span>
 			<h2 class="title"><span class="drop">A</span>ntes de resolver</h2>
 			<p class="kicker">Revisalo bien — vas a poder editarlo si algo no cuadra.</p>
 		</header>
@@ -137,11 +137,10 @@
 		border-bottom: 1px dashed var(--color-bot-border);
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-primary);
 		display: block;
 		margin-bottom: 0.25rem;
@@ -185,10 +184,9 @@
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.35rem;
 	}

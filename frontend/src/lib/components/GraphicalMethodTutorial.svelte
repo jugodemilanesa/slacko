@@ -65,15 +65,9 @@
 </script>
 
 <article class="tutorial">
-	<aside class="spine">
-		<div class="spine-rule"></div>
-		<div class="spine-meta">Lección</div>
-		<div class="spine-num">01</div>
-	</aside>
-
 	<div class="body">
 		<header class="lead">
-			<div class="overline">Antes de ver el gráfico</div>
+			<div class="super-title">Antes de ver el gráfico</div>
 			<h2 class="title">
 				<span class="drop">M</span>étodo gráfico, paso a paso
 			</h2>
@@ -211,8 +205,6 @@
 
 <style>
 	.tutorial {
-		display: grid;
-		grid-template-columns: 64px 1fr;
 		background-color: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 14px;
@@ -223,45 +215,6 @@
 		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
 	}
 
-	.spine {
-		background-color: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface-card));
-		border-right: 1px solid var(--color-bot-border);
-		padding: 1.5rem 0.5rem;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.5rem;
-		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out;
-	}
-
-	.spine-rule {
-		width: 1px;
-		flex: 1;
-		background-color: var(--color-accent);
-		opacity: 0.35;
-		margin-top: 0.5rem;
-		transition: background-color 0.25s ease-in-out;
-	}
-
-	.spine-meta {
-		writing-mode: vertical-rl;
-		transform: rotate(180deg);
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
-		color: var(--color-accent);
-		transition: color 0.25s ease-in-out;
-	}
-
-	.spine-num {
-		font-family: var(--font-display);
-		font-size: 1.6rem;
-		color: var(--color-accent);
-		opacity: 0.8;
-		line-height: 1;
-		transition: color 0.25s ease-in-out;
-	}
 
 	.body {
 		padding: 1.75rem 2rem 1.5rem 1.5rem;
@@ -273,11 +226,10 @@
 		padding-bottom: 1rem;
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.4rem;
 	}
@@ -527,14 +479,8 @@
 	}
 
 	@media (max-width: 640px) {
-		.tutorial {
-			grid-template-columns: 40px 1fr;
-		}
 		.body {
 			padding: 1.25rem 1rem 1.1rem 0.9rem;
-		}
-		.spine {
-			padding: 1rem 0.3rem;
 		}
 		.r-eq {
 			margin-left: 0;
