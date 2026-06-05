@@ -213,14 +213,15 @@ CHANNEL_LAYERS = {
 LLM_PROVIDERS = [
     {
         "name": "gemini",
-        "model": env("GEMINI_MODEL", default="gemini/gemini-2.5-flash"),
+        "model": env("GEMINI_MODEL", default="gemini/gemini-3.1-flash-lite"),
         "api_key": env("GEMINI_API_KEY", default=""),
         "rpm": 10,
         "rpd": 1500,
-        # Gemini 2.5 Flash thinking-mode a veces emite la tool call como texto
-        # (`tool_code print(default_api.foo(...))`) en vez de un tool_call
-        # estructurado. `reasoning_effort="none"` mapea a thinkingBudget=0 +
-        # includeThoughts=False en LiteLLM, lo que evita esa fuga.
+        # Los modelos Gemini con thinking-mode a veces emiten la tool call como
+        # texto (`tool_code print(default_api.foo(...))`) en vez de un tool_call
+        # estructurado. En Gemini 3.1 Flash-Lite `reasoning_effort="none"` mapea
+        # al nivel de thinking MINIMAL (el mínimo disponible en la familia 3.x),
+        # lo que minimiza esa fuga sin pagar latencia de razonamiento extendido.
         "extra_params": {"reasoning_effort": "none"},
     },
     {
