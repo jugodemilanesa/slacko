@@ -1,13 +1,6 @@
 import { env } from '$env/dynamic/public';
-import { api, setTokens, clearTokens } from './client';
-
-interface LoginResponse {
-	access: string;
-	refresh: string;
-	// Solo presentes en el login con Google (los agrega GoogleLogin en el backend).
-	created?: boolean;
-	linked_existing?: boolean;
-}
+import { api } from './client';
+import { user, isLoggedIn } from '$lib/stores/auth';
 
 export interface GoogleLoginResult {
 	/** El login con Google se conectó a una cuenta local que ya existía con ese email. */
@@ -22,13 +15,24 @@ interface User {
 	email: string;
 }
 
+// La respuesta del login con Google trae flags extra (los agrega el backend).
+interface GoogleResponse extends User {
+	created?: boolean;
+	linked_existing?: boolean;
+}
+
+function setSession(u: User | null): void {
+	user.set(u);
+	isLoggedIn.set(!!u);
+}
+
 export async function login(username: string, password: string): Promise<void> {
-	const data = await api<LoginResponse>('/auth/login/', {
+	const u = await api<User>('/auth/login/', {
 		method: 'POST',
 		body: { username, password },
 		skipAuthRedirect: true
 	});
-	setTokens(data.access, data.refresh);
+	setSession(u);
 }
 
 export async function register(
@@ -38,7 +42,8 @@ export async function register(
 ): Promise<void> {
 	await api('/auth/register/', {
 		method: 'POST',
-		body: { username, email, password }
+		body: { username, email, password },
+		skipAuthRedirect: true
 	});
 	await login(username, password);
 }
@@ -47,24 +52,28 @@ export async function getMe(): Promise<User> {
 	return api<User>('/auth/me/');
 }
 
-export async function logout(): Promise<void> {
-	const refresh = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
-	if (refresh) {
-		// Blacklistea el refresh en el backend; si falla igual limpiamos local.
-		await api('/auth/logout/', {
-			method: 'POST',
-			body: { refresh },
-			skipAuthRedirect: true
-		}).catch(() => {});
+/** Resuelve la sesión actual contra el backend y refresca el store. */
+export async function checkAuth(): Promise<boolean> {
+	try {
+		const u = await api<User>('/auth/me/', { skipAuthRedirect: true });
+		setSession(u);
+		return true;
+	} catch {
+		setSession(null);
+		return false;
 	}
-	clearTokens();
+}
+
+export async function logout(): Promise<void> {
+	await api('/auth/logout/', { method: 'POST', skipAuthRedirect: true }).catch(() => {});
+	setSession(null);
 }
 
 // ─── Google OAuth — flujo access_token vía Google Identity Services ────────
 //
 // Usamos el token client de GIS (popup, sin redirect URI ni client_secret): el
 // browser obtiene un access_token y lo mandamos al backend, que con allauth
-// resuelve el perfil del usuario (``_fetch_user_info``) y devuelve el par JWT.
+// resuelve el perfil y abre una sesión de Django (cookie).
 // Configurar es mínimo: en Google Cloud Console alcanza con crear un OAuth
 // Client ID (Web) y autorizar el origin http://localhost:5173.
 
@@ -105,7 +114,7 @@ export function preloadGoogle(): void {
 	if (isGoogleConfigured()) loadGis().catch(() => {});
 }
 
-/** Abre el popup de Google, obtiene un access_token y lo canjea por JWT. */
+/** Abre el popup de Google, obtiene un access_token y abre sesión en el backend. */
 export async function loginWithGoogle(): Promise<GoogleLoginResult> {
 	const clientId = env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID;
 	if (!clientId) {
@@ -131,11 +140,12 @@ export async function loginWithGoogle(): Promise<GoogleLoginResult> {
 		client.requestAccessToken();
 	});
 
-	const data = await api<LoginResponse>('/auth/google/', {
+	const data = await api<GoogleResponse>('/auth/google/', {
 		method: 'POST',
 		body: { access_token: accessToken },
 		skipAuthRedirect: true
 	});
-	setTokens(data.access, data.refresh);
+	// La sesión ya quedó abierta; resolvemos el user de forma robusta vía /me/.
+	setSession(await getMe());
 	return { linkedExisting: !!data.linked_existing, created: !!data.created };
 }

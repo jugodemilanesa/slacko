@@ -1,8 +1,9 @@
 /**
  * Cliente WebSocket para el chat en vivo con el orquestador.
  *
- * El backend autentica vía query param `?token=<jwt>` (ver
- * `backend/apps/chat/middleware.py`). El protocolo de mensajes es JSON sin
+ * El backend autentica por la cookie de sesión de Django (AuthMiddlewareStack
+ * de Channels) — el browser la manda sola en el handshake, sin token en la URL.
+ * El protocolo de mensajes es JSON sin
  * streaming intermedio: el cliente manda `{ message: string }` y el servidor
  * responde con un único `{ type: "message", role, content, metadata,
  * tool_calls, citations }` por turno (o `{ type: "error", ... }`).
@@ -49,18 +50,15 @@ export interface ChatSocket {
 const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000];
 
-function wsUrlFor(sessionId: string, token: string): string {
+function wsUrlFor(sessionId: string): string {
 	// Vite proxies /ws/ to the backend in dev; in prod the same origin serves
-	// both. Build the URL from the current page origin to inherit ws/wss.
+	// both. Build the URL from the current page origin to inherit ws/wss. La
+	// cookie de sesión autentica el handshake (mismo origin → el browser la manda).
 	const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-	return `${proto}://${location.host}/ws/chat/${sessionId}/?token=${encodeURIComponent(token)}`;
+	return `${proto}://${location.host}/ws/chat/${sessionId}/`;
 }
 
-export function connectChat(
-	sessionId: string,
-	accessToken: string,
-	handlers: ChatSocketHandlers
-): ChatSocket {
+export function connectChat(sessionId: string, handlers: ChatSocketHandlers): ChatSocket {
 	let socket: WebSocket | null = null;
 	let attempt = 0;
 	let manuallyClosed = false;
@@ -68,7 +66,7 @@ export function connectChat(
 
 	function open() {
 		status = 'connecting';
-		socket = new WebSocket(wsUrlFor(sessionId, accessToken));
+		socket = new WebSocket(wsUrlFor(sessionId));
 
 		socket.addEventListener('open', () => {
 			attempt = 0;

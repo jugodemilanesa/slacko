@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { isAuthenticated } from '$lib/api/client';
+	import { checkAuth } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
 
-	onMount(() => {
-		if (isAuthenticated()) {
-			goto('/chat');
-		} else {
-			goto('/login');
-		}
+	onMount(async () => {
+		// La sesión vive en una cookie httpOnly: preguntamos al backend.
+		goto((await checkAuth()) ? '/chat' : '/login');
 	});
 </script>
 

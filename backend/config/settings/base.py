@@ -1,7 +1,6 @@
 """Base settings for Slacko project."""
 
 import os
-from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -126,30 +125,36 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --- DRF ---
 
 REST_FRAMEWORK = {
+    # Auth por sesión de Django: el login crea una sesión server-side y el
+    # browser maneja la cookie httpOnly. Sin tokens en el front. CSRF se exige
+    # en métodos no seguros para requests ya autenticados (ver SessionAuthentication).
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
 
-# --- JWT ---
+# --- Sesiones (Django nativo) ---
 
-SIMPLE_JWT = {
-    # Access corto (se renueva transparente vía refresh) + refresh largo para
-    # bajar fricción en estudiantes que vuelven entre clases.
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
-    # Cada /refresh/ emite un refresh nuevo y blacklistea el anterior: limita la
-    # ventana de un refresh robado y deja una cadena auditable de rotaciones.
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    # TokenObtainPairView no actualiza last_login por default; lo activamos para
-    # tener tracking de actividad de login sin código extra.
-    "UPDATE_LAST_LOGIN": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
+# Sesión deslizante de 14 días: cada request con actividad renueva la expiración,
+# así un alumno activo no se desloguea. La cookie es httpOnly (no accesible por
+# JS → inmune a robo por XSS) y SameSite=Lax.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG  # en prod (HTTPS) la cookie viaja solo por TLS
+# La cookie CSRF sí debe ser legible por JS para mandar el header X-CSRFToken.
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+# Orígenes confiables para CSRF (el front que consume la API por cookie).
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+)
 
 # --- dj-rest-auth + allauth ---
 
@@ -180,11 +185,11 @@ SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 
 REST_AUTH = {
-    "USE_JWT": True,
-    "JWT_AUTH_HTTPONLY": False,  # frontend reads the JWT from the JSON body
-    "SESSION_LOGIN": False,
-    # JWT-only: disable the default DRF Token model so dj-rest-auth doesn't
-    # require `rest_framework.authtoken` in INSTALLED_APPS.
+    # Login por sesión de Django (sin JWT). dj-rest-auth hace
+    # ``django.contrib.auth.login`` y deja la sesión en la cookie.
+    "USE_JWT": False,
+    "SESSION_LOGIN": True,
+    # Sin tokens DRF: evita requerir `rest_framework.authtoken` en INSTALLED_APPS.
     "TOKEN_MODEL": None,
     "REGISTER_SERIALIZER": "apps.accounts.serializers.RegisterSerializer",
     "USER_DETAILS_SERIALIZER": "apps.accounts.serializers.UserSerializer",
@@ -214,6 +219,9 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173"],
 )
+# Necesario para que el browser mande/acepte la cookie de sesión en requests
+# cross-origin (si el front no estuviera detrás del mismo origin vía proxy).
+CORS_ALLOW_CREDENTIALS = True
 
 # --- Channels ---
 

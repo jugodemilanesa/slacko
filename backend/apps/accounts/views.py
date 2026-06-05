@@ -1,7 +1,8 @@
-"""Account views.
+"""Account views — autenticación por sesión de Django.
 
-Keeps the legacy SimpleJWT-only register/me endpoints for backward compat,
-and exposes a Google OAuth login view via dj-rest-auth's social adapter.
+El login crea una sesión server-side (cookie httpOnly que maneja el browser);
+no se emiten tokens. Incluye el bootstrap de CSRF, login/logout por sesión, el
+perfil del usuario actual y el login con Google (que también deja sesión).
 """
 
 from __future__ import annotations
@@ -11,22 +12,62 @@ from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Error
 from allauth.socialaccount.signals import social_account_added
 from dj_rest_auth.registration.views import SocialLoginView
+from django.contrib.auth import authenticate
+from django.contrib.auth import login as django_login
+from django.contrib.auth import logout as django_logout
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
 
 
+@method_decorator(ensure_csrf_cookie, name="get")
+class CSRFView(APIView):
+    """Setea la cookie ``csrftoken``. El front la llama una vez al cargar para
+    poder mandar el header ``X-CSRFToken`` en los POST/PATCH/DELETE."""
+
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request) -> Response:
+        return Response({"detail": "CSRF cookie set"}, status=status.HTTP_200_OK)
+
+
 class RegisterView(generics.CreateAPIView):
-    """Legacy registration endpoint (preserved for the existing frontend)."""
+    """Alta de usuario. Tras crear, el front llama a login para abrir sesión."""
 
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
+
+
+class LoginView(APIView):
+    """Login por sesión: autentica y hace ``django.contrib.auth.login``.
+
+    Acepta usuario o email en ``username`` (allauth backend resuelve ambos).
+    """
+
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request) -> Response:
+        identifier = (request.data.get("username") or "").strip()
+        password = request.data.get("password") or ""
+        if not identifier or not password:
+            return Response(
+                {"detail": "Usuario y contraseña son obligatorios."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user = authenticate(request, username=identifier, password=password)
+        if user is None:
+            return Response(
+                {"detail": "Usuario o contraseña incorrectos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        django_login(request, user)
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 
 
 class MeView(APIView):
@@ -38,37 +79,19 @@ class MeView(APIView):
 
 
 class LogoutView(APIView):
-    """Cierra la sesión blacklisteando el refresh token entregado.
-
-    El access token sigue siendo válido hasta su corta expiración (1h), pero el
-    refresh queda invalidado, por lo que la sesión no puede renovarse. Requiere
-    ``rest_framework_simplejwt.token_blacklist`` (ya en INSTALLED_APPS).
-
-    Es ``AllowAny``: la posesión del refresh token es la credencial, así que se
-    puede cerrar sesión incluso con el access ya expirado.
-    """
+    """Cierra la sesión de Django (``logout`` borra la sesión server-side y la
+    cookie). Idempotente: aunque no haya sesión activa responde OK."""
 
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request) -> Response:
-        refresh = request.data.get("refresh")
-        if not refresh:
-            return Response(
-                {"detail": "Falta el campo 'refresh'."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            RefreshToken(refresh).blacklist()
-        except TokenError:
-            # Token ya expirado/inválido/blacklisteado: el resultado deseado
-            # (no poder renovar) ya se cumple, así que respondemos idempotente.
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        return Response(status=status.HTTP_205_RESET_CONTENT)
+        django_logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GoogleLogin(SocialLoginView):
-    """Canjea un ``access_token`` de Google (obtenido por GIS en el frontend)
-    por un par de tokens JWT.
+    """Canjea un ``access_token`` de Google (obtenido por GIS en el frontend) y
+    abre una sesión de Django (``SESSION_LOGIN``).
 
     Usamos el flujo de access_token: allauth resuelve el perfil con
     ``_fetch_user_info`` y no hace falta ni ``client_secret`` ni un redirect URI

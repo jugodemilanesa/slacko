@@ -101,12 +101,20 @@ def test_register_legajo_no_numerico_rechazado(client):
 def _login(client, username="alumno1", password="Slacko-2026-pl"):
     User.objects.create_user(username, email=f"{username}@utn.edu.ar", password=password)
     resp = client.post(
-        reverse("accounts:token_obtain"),
+        reverse("accounts:login"),
         {"username": username, "password": password},
         format="json",
     )
     assert resp.status_code == 200, resp.content
-    return resp.json()
+    return resp
+
+
+def test_login_abre_sesion_y_me_responde(client):
+    _login(client)
+    # La sesión queda en la cookie del client; /me/ responde autenticado.
+    me = client.get(reverse("accounts:me"))
+    assert me.status_code == 200
+    assert me.json()["username"] == "alumno1"
 
 
 def test_login_actualiza_last_login(client):
@@ -114,46 +122,33 @@ def test_login_actualiza_last_login(client):
     assert User.objects.get(username="alumno1").last_login is not None
 
 
-def test_logout_blacklistea_refresh(client):
-    tokens = _login(client)
-    refresh = tokens["refresh"]
-
-    logout = client.post(
-        reverse("accounts:logout"), {"refresh": refresh}, format="json"
+def test_login_credenciales_invalidas_da_400(client):
+    User.objects.create_user("alumno1", email="a@utn.edu.ar", password="Slacko-2026-pl")
+    resp = client.post(
+        reverse("accounts:login"),
+        {"username": "alumno1", "password": "incorrecta"},
+        format="json",
     )
-    assert logout.status_code == 205
-
-    # El refresh blacklisteado ya no puede renovar la sesión.
-    again = client.post(
-        reverse("accounts:token_refresh"), {"refresh": refresh}, format="json"
-    )
-    assert again.status_code == 401
-
-
-def test_logout_sin_refresh_da_400(client):
-    _login(client)
-    resp = client.post(reverse("accounts:logout"), {}, format="json")
     assert resp.status_code == 400
 
 
-def test_refresh_rota_el_token(client):
-    tokens = _login(client)
-    first_refresh = tokens["refresh"]
+def test_me_sin_sesion_da_403(client):
+    assert client.get(reverse("accounts:me")).status_code == 403
 
-    rotated = client.post(
-        reverse("accounts:token_refresh"), {"refresh": first_refresh}, format="json"
-    )
-    assert rotated.status_code == 200
-    # Con ROTATE_REFRESH_TOKENS, el refresh response incluye uno nuevo...
-    assert "refresh" in rotated.json()
-    new_refresh = rotated.json()["refresh"]
-    assert new_refresh != first_refresh
 
-    # ...y el viejo queda blacklisteado (BLACKLIST_AFTER_ROTATION).
-    reuse = client.post(
-        reverse("accounts:token_refresh"), {"refresh": first_refresh}, format="json"
-    )
-    assert reuse.status_code == 401
+def test_logout_cierra_la_sesion(client):
+    _login(client)
+    assert client.get(reverse("accounts:me")).status_code == 200
+
+    logout = client.post(reverse("accounts:logout"))
+    assert logout.status_code == 204
+
+    # Sin sesión, /me/ ya no responde autenticado.
+    assert client.get(reverse("accounts:me")).status_code == 403
+
+
+def test_logout_sin_sesion_es_idempotente(client):
+    assert client.post(reverse("accounts:logout")).status_code == 204
 
 
 # ─── Google OAuth (flujo access_token) ────────────────────────────────────

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
-	import { isAuthenticated, clearTokens } from '$lib/api/client';
+	import { checkAuth, logout as apiLogout } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
 	import {
 		currentState,
@@ -277,10 +277,11 @@
 	});
 
 	onMount(() => {
-		if (!isAuthenticated()) {
-			goto('/login');
-			return;
-		}
+		// La sesión vive en cookie httpOnly: validamos contra el backend y, si no
+		// hay sesión, redirigimos al login.
+		checkAuth().then((ok) => {
+			if (!ok) goto('/login');
+		});
 
 		// Set up media query listener for wide screens
 		const mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -314,8 +315,8 @@
 		});
 	});
 
-	function logout() {
-		clearTokens();
+	async function logout() {
+		await apiLogout();
 		goto('/login');
 	}
 
