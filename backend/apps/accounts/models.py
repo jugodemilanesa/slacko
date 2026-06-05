@@ -25,6 +25,10 @@ class UserProfile(models.Model):
     legajo = models.CharField(max_length=20, blank=True)
     comision = models.CharField(max_length=20, blank=True)
     accepted_terms_at = models.DateTimeField(null=True, blank=True)
+    # Última actividad real del usuario (se refresca al abrir un WebSocket de
+    # chat). Complementa ``User.last_login`` —que solo marca el login— con una
+    # señal de presencia más fina para auditoría y métricas de uso.
+    last_seen = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

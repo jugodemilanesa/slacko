@@ -137,8 +137,17 @@ REST_FRAMEWORK = {
 # --- JWT ---
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Access corto (se renueva transparente vía refresh) + refresh largo para
+    # bajar fricción en estudiantes que vuelven entre clases.
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    # Cada /refresh/ emite un refresh nuevo y blacklistea el anterior: limita la
+    # ventana de un refresh robado y deja una cadena auditable de rotaciones.
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    # TokenObtainPairView no actualiza last_login por default; lo activamos para
+    # tener tracking de actividad de login sin código extra.
+    "UPDATE_LAST_LOGIN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -155,6 +164,20 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+# El email es identificador unívoco: lo exigimos único a nivel allauth para
+# que ni el signup local ni el social puedan duplicarlo.
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Identidad unívoca por email, AGNÓSTICA al método de acceso. Si alguien entra
+# con Google y ya existe una cuenta local con ese email —haya nacido por
+# usuario/contraseña o por un Google previo— allauth la reconoce y conecta el
+# social account a esa misma cuenta, sin duplicar. Y si no existe, crea una
+# nueva. Es nativo de allauth ≥65 (matchea contra User.email aunque no haya un
+# registro EmailAddress), así que no necesitamos adapter custom.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+# Google ya entrega el email verificado; no pedimos verificación extra.
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 
 REST_AUTH = {
     "USE_JWT": True,
@@ -176,7 +199,9 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {"access_type": "online"},
-        "OAUTH_PKCE_ENABLED": True,
+        # Flujo access_token (GIS en el frontend → access_token → backend). No
+        # hay intercambio de code en el server, así que PKCE no aplica.
+        "OAUTH_PKCE_ENABLED": False,
     },
 }
 

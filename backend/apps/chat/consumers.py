@@ -39,6 +39,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4404)
             return
 
+        await self._touch_last_seen(user.id)
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -184,6 +185,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return Session.objects.get(id=uuid.UUID(str(session_id)), user_id=user_id)
         except (Session.DoesNotExist, ValueError):
             return None
+
+    @database_sync_to_async
+    def _touch_last_seen(self, user_id: int):
+        """Marca presencia del usuario al abrir el WebSocket de chat."""
+        from django.utils import timezone
+
+        from apps.accounts.models import UserProfile
+
+        UserProfile.objects.filter(user_id=user_id).update(last_seen=timezone.now())
 
     @database_sync_to_async
     def _save_message(self, session_id, role: str, content: str, metadata: dict):

@@ -11,6 +11,9 @@ urlpatterns = [
     path("login/", TokenObtainPairView.as_view(), name="token_obtain"),
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", views.MeView.as_view(), name="me"),
+    # Logout explícito que blacklistea el refresh. Va ANTES del include de
+    # dj-rest-auth para tener prioridad sobre su /logout/ genérico.
+    path("logout/", views.LogoutView.as_view(), name="logout"),
     # dj-rest-auth full surface: password reset, change, user details, logout.
     path("", include("dj_rest_auth.urls")),
     # dj-rest-auth registration (extra endpoints beyond legacy register/).
