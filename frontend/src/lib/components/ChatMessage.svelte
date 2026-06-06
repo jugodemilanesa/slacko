@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import katex from 'katex';
 	import 'katex/dist/katex.min.css';
+	import DOMPurify from 'isomorphic-dompurify';
 
 	let {
 		role,
@@ -23,23 +24,29 @@
 	let finalWidth = $state<number | null>(null);
 
 	const fullHtml = $derived(
-		(content || '')
-			.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-			.replace(/\$\$(.*?)\$\$/g, (_, math) => {
-				try {
-					return katex.renderToString(math, { displayMode: true, throwOnError: false });
-				} catch {
-					return `$$${math}$$`;
-				}
-			})
-			.replace(/\$(.*?)\$/g, (_, math) => {
-				try {
-					return katex.renderToString(math, { displayMode: false, throwOnError: false });
-				} catch {
-					return `$${math}$`;
-				}
-			})
-			.replace(/\n/g, '<br/>')
+		// Saneamos el HTML resultante antes de {@html}: el contenido (incluido el
+		// texto del usuario) se interpola sin escapar, así que sería un sink XSS.
+		// DOMPurify conserva el markup de KaTeX (MathML/SVG) y elimina scripts /
+		// handlers de eventos.
+		DOMPurify.sanitize(
+			(content || '')
+				.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+				.replace(/\$\$(.*?)\$\$/g, (_, math) => {
+					try {
+						return katex.renderToString(math, { displayMode: true, throwOnError: false });
+					} catch {
+						return `$$${math}$$`;
+					}
+				})
+				.replace(/\$(.*?)\$/g, (_, math) => {
+					try {
+						return katex.renderToString(math, { displayMode: false, throwOnError: false });
+					} catch {
+						return `$${math}$`;
+					}
+				})
+				.replace(/\n/g, '<br/>')
+		)
 	);
 
 	onMount(() => {

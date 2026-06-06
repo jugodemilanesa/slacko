@@ -21,7 +21,12 @@
 				output: 'html'
 			});
 		} catch {
-			return `<span class="latex-fallback">${expr}</span>`;
+			// Escapamos expr en el fallback (se inyecta vía {@html}).
+			const safe = expr
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+			return `<span class="latex-fallback">${safe}</span>`;
 		}
 	});
 </script>

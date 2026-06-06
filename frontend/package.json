@@ -23,6 +23,7 @@
 	"dependencies": {
 		"@tailwindcss/vite": "^4.2.4",
 		"@types/katex": "^0.16.8",
+		"isomorphic-dompurify": "^3.16.0",
 		"katex": "^0.16.47",
 		"marked": "^18.0.2",
 		"plotly.js-dist-min": "^3.5.0",

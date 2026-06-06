@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { marked } from 'marked';
+	import DOMPurify from 'isomorphic-dompurify';
 
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 	import ToolCallChip from './ToolCallChip.svelte';
@@ -42,7 +43,11 @@
 	let trueFinalSpineHeight = $state<number | null>(null);
 	let currentSpineHeight = $state(0);
 
-	const parsed = $derived(role === 'assistant' ? (marked.parse(content || '') as string) : '');
+	// Sanitizamos la salida del LLM antes de inyectarla como HTML ({@html}):
+	// marked no escapa el HTML inline, así que sin esto sería un sink de XSS.
+	const parsed = $derived(
+		role === 'assistant' ? DOMPurify.sanitize(marked.parse(content || '') as string) : ''
+	);
 
 	onMount(() => {
 		const r = role;
