@@ -1,31 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <radialGradient id="bg-expl" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#fff4e0"/>
-      <stop offset="100%" stop-color="#e8d4ad"/>
+    <radialGradient id="bg" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#fff6e6"/>
+      <stop offset="100%" stop-color="#ead7b0"/>
     </radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7e7c8"/>
+      <stop offset="100%" stop-color="#eccf9c"/>
+    </linearGradient>
   </defs>
-  <circle cx="60" cy="60" r="58" fill="url(#bg-expl)" stroke="#7a4a1f" stroke-width="2"/>
-  <ellipse cx="60" cy="68" rx="38" ry="34" fill="#f4d9a8"/>
-  <path d="M22 60 Q60 18 98 60 Q90 38 60 30 Q30 38 22 60 Z" fill="#8a5a2b"/>
-  <ellipse cx="28" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
-  <ellipse cx="92" cy="44" rx="8" ry="10" fill="#8a5a2b"/>
-  <!-- ojos abiertos atentos -->
-  <ellipse cx="48" cy="64" rx="3.5" ry="4" fill="#3a2410"/>
-  <ellipse cx="49" cy="62.5" rx="1" ry="1.2" fill="#fff"/>
-  <ellipse cx="72" cy="64" rx="3.5" ry="4" fill="#3a2410"/>
-  <ellipse cx="73" cy="62.5" rx="1" ry="1.2" fill="#fff"/>
+  <circle cx="60" cy="60" r="58" fill="url(#bg)" stroke="#caa46a" stroke-width="2"/>
+
+  <ellipse cx="26" cy="50" rx="9" ry="11" fill="#9a6a36"/>
+  <ellipse cx="94" cy="50" rx="9" ry="11" fill="#9a6a36"/>
+  <ellipse cx="26" cy="50" rx="4.5" ry="6" fill="#caa46a"/>
+  <ellipse cx="94" cy="50" rx="4.5" ry="6" fill="#caa46a"/>
+
+  <path d="M28 62 Q28 96 60 100 Q92 96 92 62 Q92 40 60 38 Q28 40 28 62 Z" fill="url(#fur)"/>
+
+  <path d="M26 60 Q24 40 36 32 Q34 42 44 38 Q44 28 56 30 Q60 22 64 30 Q76 28 76 38 Q86 42 84 32 Q96 40 94 60 Q84 44 60 44 Q36 44 26 60 Z" fill="#9a6a36"/>
+  <path d="M30 56 Q40 46 60 46 Q80 46 90 56 Q78 50 60 50 Q42 50 30 56 Z" fill="#7a5026" opacity="0.6"/>
+
   <!-- cejas decididas -->
-  <path d="M40 54 L56 56" stroke="#3a2410" stroke-width="2" stroke-linecap="round"/>
-  <path d="M64 56 L80 54" stroke="#3a2410" stroke-width="2" stroke-linecap="round"/>
-  <ellipse cx="60" cy="76" rx="3" ry="2" fill="#3a2410"/>
-  <!-- boca hablando (forma de O) -->
-  <ellipse cx="60" cy="88" rx="6" ry="4" fill="#3a2410"/>
-  <!-- burbuja de diálogo -->
-  <g transform="translate(96 22)" opacity="0.9">
-    <circle cx="0" cy="0" r="11" fill="#fff" stroke="#3b4cc0" stroke-width="1.5"/>
-    <circle cx="-4" cy="0" r="1.5" fill="#3b4cc0"/>
-    <circle cx="0" cy="0" r="1.5" fill="#3b4cc0"/>
-    <circle cx="4" cy="0" r="1.5" fill="#3b4cc0"/>
-  </g>
+  <path d="M40 60 Q48 57 57 60" stroke="#5a3a1c" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M63 60 Q72 57 80 60" stroke="#5a3a1c" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- ojos atentos -->
+  <ellipse cx="49" cy="71" rx="3.5" ry="4.2" fill="#3a2410"/>
+  <circle cx="50.2" cy="69.3" r="1.1" fill="#fff"/>
+  <ellipse cx="71" cy="71" rx="3.5" ry="4.2" fill="#3a2410"/>
+  <circle cx="72.2" cy="69.3" r="1.1" fill="#fff"/>
+
+  <!-- nariz + boca hablando -->
+  <ellipse cx="60" cy="80" rx="3.2" ry="2.2" fill="#5a3a1e"/>
+  <ellipse cx="60" cy="89" rx="5.5" ry="4" fill="#7a3b30"/>
+  <path d="M55 88 Q60 90 65 88" stroke="#f7e7c8" stroke-width="1.4" fill="none"/>
+
+  <!-- burbuja "…" -->
+  <circle cx="96" cy="24" r="11" fill="#fff" stroke="#3b4cc0" stroke-width="1.6"/>
+  <circle cx="91.5" cy="24" r="1.6" fill="#3b4cc0"/>
+  <circle cx="96" cy="24" r="1.6" fill="#3b4cc0"/>
+  <circle cx="100.5" cy="24" r="1.6" fill="#3b4cc0"/>
+  <circle cx="84" cy="34" r="2.4" fill="#fff" stroke="#3b4cc0" stroke-width="1.2"/>
 </svg>

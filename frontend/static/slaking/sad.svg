@@ -1,24 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
-    <radialGradient id="bg-sad" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#f3eadb"/>
+    <radialGradient id="bg" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#f3ead9"/>
       <stop offset="100%" stop-color="#d9c4a0"/>
     </radialGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f1ddb8"/>
+      <stop offset="100%" stop-color="#e3c794"/>
+    </linearGradient>
   </defs>
-  <circle cx="60" cy="60" r="58" fill="url(#bg-sad)" stroke="#7a4a1f" stroke-width="2"/>
-  <ellipse cx="60" cy="68" rx="38" ry="34" fill="#f0d3a0"/>
-  <path d="M22 60 Q60 18 98 60 Q90 38 60 30 Q30 38 22 60 Z" fill="#7d4f23"/>
-  <ellipse cx="28" cy="46" rx="8" ry="10" fill="#7d4f23"/>
-  <ellipse cx="92" cy="46" rx="8" ry="10" fill="#7d4f23"/>
-  <!-- ojos caídos -->
-  <path d="M42 66 Q50 62 58 66" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round" transform="rotate(8 50 64)"/>
-  <path d="M62 66 Q70 62 78 66" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round" transform="rotate(-8 70 64)"/>
-  <!-- cejas tristes -->
-  <path d="M40 56 Q48 60 56 58" stroke="#3a2410" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M64 58 Q72 60 80 56" stroke="#3a2410" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <ellipse cx="60" cy="76" rx="3" ry="2" fill="#3a2410"/>
-  <!-- boca invertida -->
-  <path d="M50 90 Q60 82 70 90" stroke="#3a2410" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="58" fill="url(#bg)" stroke="#bb975f" stroke-width="2"/>
+
+  <ellipse cx="26" cy="54" rx="9" ry="11" fill="#8a5d2e"/>
+  <ellipse cx="94" cy="54" rx="9" ry="11" fill="#8a5d2e"/>
+  <ellipse cx="26" cy="54" rx="4.5" ry="6" fill="#bb975f"/>
+  <ellipse cx="94" cy="54" rx="4.5" ry="6" fill="#bb975f"/>
+
+  <path d="M28 62 Q28 96 60 100 Q92 96 92 62 Q92 40 60 38 Q28 40 28 62 Z" fill="url(#fur)"/>
+
+  <path d="M26 60 Q24 42 36 34 Q34 44 44 40 Q44 30 56 32 Q60 24 64 32 Q76 30 76 40 Q86 44 84 34 Q96 42 94 60 Q84 46 60 46 Q36 46 26 60 Z" fill="#8a5d2e"/>
+  <path d="M30 57 Q40 48 60 48 Q80 48 90 57 Q78 52 60 52 Q42 52 30 57 Z" fill="#6e4420" opacity="0.6"/>
+
+  <!-- cejas tristes (internas arriba) -->
+  <path d="M40 60 Q48 64 57 61" stroke="#5a3a1c" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M63 61 Q72 64 80 60" stroke="#5a3a1c" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- ojos caídos, brillito -->
+  <path d="M43 73 Q49 70 55 74" stroke="#3a2410" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M65 74 Q71 70 77 73" stroke="#3a2410" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+
+  <!-- nariz + boca hacia abajo -->
+  <ellipse cx="60" cy="81" rx="3.2" ry="2.2" fill="#5a3a1e"/>
+  <path d="M51 91 Q60 84 69 91" stroke="#3a2410" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+
   <!-- lágrima -->
-  <path d="M44 78 Q42 86 46 88 Q48 86 46 78 Z" fill="#7ec8e3" opacity="0.85"/>
+  <path d="M44 79 Q41 88 45 90 Q49 88 46 79 Z" fill="#8fc9e6"/>
+  <ellipse cx="45" cy="83" rx="1" ry="1.6" fill="#fff" opacity="0.8"/>
 </svg>
