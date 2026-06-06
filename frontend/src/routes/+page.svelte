@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { isDarkMode, toggleDarkMode } from '$lib/stores/theme';
 	import { reveal } from '$lib/actions/reveal';
 	import { checkAuth } from '$lib/api/auth';
 
-	// Si ya hay sesión, las CTAs llevan directo al chat ("Ir a Slacko").
+	// Con sesión activa redirigimos al chat; si no, se queda en la landing.
 	let authed = $state(false);
 
 	const modes = [
@@ -38,8 +39,11 @@
 	let plotEl: HTMLElement;
 
 	onMount(() => {
-		// Resuelve la sesión sin redirigir (es una página pública).
-		checkAuth().then((ok) => (authed = ok));
+		// Si ya hay sesión, mandamos directo al chat; si no, queda la landing.
+		checkAuth().then((ok) => {
+			if (ok) goto('/chat');
+			else authed = false;
+		});
 
 		const ctx2d = canvas.getContext('2d');
 		if (!ctx2d) return;
