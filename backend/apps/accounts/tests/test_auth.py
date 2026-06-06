@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from allauth.socialaccount.providers.oauth2.client import OAuth2Error
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -154,16 +155,50 @@ def test_logout_sin_sesion_es_idempotente(client):
 # ─── Google OAuth (flujo access_token) ────────────────────────────────────
 
 
-def test_google_login_token_invalido_da_400(client):
-    """Un access_token inválido se traduce a 400, no 500 (OAuth2Error capturado)."""
+def _google_client_id() -> str:
+    return settings.SOCIALACCOUNT_PROVIDERS["google"]["APP"]["client_id"]
+
+
+def _tokeninfo(aud: str) -> Mock:
+    """Simula la respuesta de Google tokeninfo con una audiencia dada."""
+    resp = Mock()
+    resp.status_code = 200
+    resp.json.return_value = {"aud": aud, "azp": aud, "email": "x@gmail.com"}
+    return resp
+
+
+def test_google_login_audiencia_invalida_da_400(client):
+    """Un access_token emitido para OTRA app se rechaza (confused deputy)."""
     with patch(
+        "apps.accounts.views.requests.get",
+        return_value=_tokeninfo("otra-app.apps.googleusercontent.com"),
+    ):
+        resp = client.post(
+            reverse("accounts:google_login"),
+            {"access_token": "robado-de-otra-app"},
+            format="json",
+        )
+    assert resp.status_code == 400
+    assert "esta aplicación" in resp.json().get("detail", "")
+
+
+def test_google_login_audiencia_valida_continua_el_flujo(client):
+    """Con audiencia correcta pasa la verificación y sigue el flujo de allauth.
+
+    Lo cortamos con OAuth2Error → 400 con un mensaje DISTINTO al de audiencia,
+    lo que prueba que el chequeo de audiencia dejó pasar el token.
+    """
+    with patch(
+        "apps.accounts.views.requests.get",
+        return_value=_tokeninfo(_google_client_id()),
+    ), patch(
         "allauth.socialaccount.providers.google.views.GoogleOAuth2Adapter.complete_login",
         side_effect=OAuth2Error("Request to user info failed"),
     ):
         resp = client.post(
             reverse("accounts:google_login"),
-            {"access_token": "bogus"},
+            {"access_token": "token-valido"},
             format="json",
         )
     assert resp.status_code == 400
-    assert "Google" in resp.json().get("detail", "")
+    assert "No pudimos validar" in resp.json().get("detail", "")

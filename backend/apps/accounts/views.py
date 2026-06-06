@@ -7,11 +7,13 @@ perfil del usuario actual y el login con Google (que también deja sesión).
 
 from __future__ import annotations
 
+import requests
 from allauth.account.signals import user_signed_up
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Error
 from allauth.socialaccount.signals import social_account_added
 from dj_rest_auth.registration.views import SocialLoginView
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
@@ -23,6 +25,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import RegisterSerializer, UserSerializer
+
+GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
@@ -100,7 +104,47 @@ class GoogleLogin(SocialLoginView):
 
     adapter_class = GoogleOAuth2Adapter
 
+    def _audience_ok(self, access_token: str) -> bool:
+        """Verifica que el access_token fue emitido para NUESTRO client_id.
+
+        El flujo access_token resuelve identidad vía el endpoint userinfo de
+        Google, que acepta cualquier token válido con scope email — sin chequear
+        para qué app fue emitido. Sin esta verificación, un token emitido para
+        OTRA app (confused deputy / token substitution) podría reenviarse acá y,
+        combinado con el auto-connect por email, loguear al atacante como un
+        usuario existente. ``tokeninfo`` expone ``aud``/``azp`` para validar la
+        audiencia contra nuestro Client ID.
+        """
+        client_id = (
+            settings.SOCIALACCOUNT_PROVIDERS.get("google", {})
+            .get("APP", {})
+            .get("client_id", "")
+        )
+        if not client_id:
+            return False
+        try:
+            resp = requests.get(
+                GOOGLE_TOKENINFO_URL,
+                params={"access_token": access_token},
+                timeout=5,
+            )
+        except requests.RequestException:
+            return False
+        if resp.status_code != 200:
+            return False
+        data = resp.json()
+        return client_id in (data.get("aud"), data.get("azp"))
+
     def post(self, request, *args, **kwargs):
+        # Antes de dejar que allauth resuelva la identidad, validamos que el
+        # access_token sea para esta app (cierra el confused-deputy del flujo).
+        access_token = request.data.get("access_token")
+        if access_token and not self._audience_ok(access_token):
+            return Response(
+                {"detail": "El token de Google no es válido para esta aplicación."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Detectamos, vía señales de allauth durante este request, en cuál de los
         # tres casos caímos, para que el frontend pueda avisar al usuario:
         #   - created:         alta nueva (user_signed_up)
