@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import User
@@ -13,6 +14,14 @@ from apps.orchestrator import usage
 
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Ensure a fresh cache for every test."""
+    usage._cache.clear()
+    yield
+    usage._cache.clear()
 
 
 @pytest.fixture
@@ -124,3 +133,57 @@ class TestUsageSnapshot:
         prov = {"name": "zai"}
         snap = usage.usage_snapshot(prov)
         assert snap == {"name": "zai"}
+
+
+class TestCache:
+    def test_cache_returns_same_count_within_ttl(self, session: Session) -> None:
+        """Repeated calls within TTL return cached count without extra queries."""
+        prov = {"name": "gemini", "rpm": 10}
+        for _ in range(3):
+            _add_message(session, "gemini")
+
+        # First call populates the cache.
+        result1 = usage.is_near_cap(prov)
+        # Second call within TTL should use cache (same result).
+        result2 = usage.is_near_cap(prov)
+        assert result1 == result2 is False
+
+    def test_increment_usage_invalidates_cache(self, session: Session) -> None:
+        """increment_usage() forces a fresh DB query on next call."""
+        prov = {"name": "gemini", "rpm": 10}
+
+        # Create 4 messages — under the 90% cap of 10.
+        for _ in range(4):
+            _add_message(session, "gemini")
+        assert usage.is_near_cap(prov) is False
+
+        # Populate the cache.
+        usage.is_near_cap(prov)
+        assert ("gemini", "rpm") in usage._cache
+
+        # Invalidate cache and add more messages to reach cap.
+        usage.increment_usage()
+        assert ("gemini", "rpm") not in usage._cache
+
+        for _ in range(5):
+            _add_message(session, "gemini")
+        # Now 9 messages — at the 90% cap of 10.
+        assert usage.is_near_cap(prov) is True
+
+    def test_cache_ttl_expiry_forces_requery(self, session: Session) -> None:
+        """After TTL expires, the next call re-queries the DB."""
+        prov = {"name": "gemini", "rpm": 10}
+        for _ in range(3):
+            _add_message(session, "gemini")
+
+        # Populate cache.
+        usage.is_near_cap(prov)
+        key = ("gemini", "rpm")
+        assert key in usage._cache
+
+        # Simulate TTL expiry by backdating the timestamp.
+        old_ts = usage._cache[key][1] - (usage._CACHE_TTL + 1)
+        usage._cache[key] = (usage._cache[key][0], old_ts)
+
+        # Next call should re-query (and still return False — 3 < 9).
+        assert usage.is_near_cap(prov) is False

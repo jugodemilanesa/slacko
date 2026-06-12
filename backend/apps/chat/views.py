@@ -59,7 +59,9 @@ class SessionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return SessionSerializer
 
     def get_queryset(self):
-        return Session.objects.filter(user=self.request.user)
+        return Session.objects.filter(user=self.request.user).prefetch_related(
+            "messages"
+        )
 
 
 class SessionMessagesView(generics.ListAPIView):

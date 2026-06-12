@@ -34,9 +34,6 @@
 	import ConvertForms from '$lib/components/steps/ConvertForms.svelte';
 	import SolveAndGraph from '$lib/components/steps/SolveAndGraph.svelte';
 	import Interpret from '$lib/components/steps/Interpret.svelte';
-	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
-	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
-	import LLMChatMode from '$lib/components/steps/LLMChatMode.svelte';
 	import ProviderBadge from '$lib/components/llm/ProviderBadge.svelte';
 	import { messages as llmMessages } from '$lib/stores/llmChat';
 
@@ -425,19 +422,25 @@
 			{#if inTheoryMode}
 				<div bind:this={chatContainer} class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
-						<TheoryMode />
+						{#await import('$lib/components/steps/TheoryMode.svelte') then { default: Comp }}
+							<Comp />
+						{/await}
 					{/key}
 				</div>
 			{:else if inTutorialMode}
 				<div bind:this={chatContainer} class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
-						<TutorialMode />
+						{#await import('$lib/components/steps/TutorialMode.svelte') then { default: Comp }}
+							<Comp />
+						{/await}
 					{/key}
 				</div>
 			{:else if inLLMChatMode}
 				<div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 					{#key $currentState}
-						<LLMChatMode />
+						{#await import('$lib/components/steps/LLMChatMode.svelte') then { default: Comp }}
+							<Comp />
+						{/await}
 					{/key}
 				</div>
 			{:else}

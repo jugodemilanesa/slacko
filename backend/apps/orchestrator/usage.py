@@ -24,6 +24,7 @@ Survives restarts naturalmente.
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 from typing import Any
 
@@ -36,20 +37,65 @@ logger = logging.getLogger(__name__)
 # al alcanzar el 90% (9 RPM). Evita golpear el techo exacto.
 _SAFETY_FACTOR = 0.90
 
+# ── In-memory cache for COUNT queries ────────────────────────────────────
+# Each provider+window is cached for _CACHE_TTL seconds.  A new assistant
+# message invalidates the cache via ``increment_usage()`` so the next
+# ``is_near_cap()`` call re-queries.  Without invalidation the cache would
+# serve stale counts after the user generates new messages.
+_CACHE_TTL: float = 30.0  # seconds
+
+_cache: dict[tuple[str, str], tuple[int, float]] = {}
+
+
+def _cache_key(provider_name: str, window: str) -> tuple[str, str]:
+    return (provider_name, window)
+
+
+def _get_cached_count(provider_name: str, window: str) -> int | None:
+    """Return cached count if still valid, else None."""
+    entry = _cache.get(_cache_key(provider_name, window))
+    if entry is None:
+        return None
+    count, ts = entry
+    if (time.monotonic() - ts) >= _CACHE_TTL:
+        return None
+    return count
+
+
+def _set_cached_count(provider_name: str, window: str, count: int) -> None:
+    _cache[_cache_key(provider_name, window)] = (count, time.monotonic())
+
+
+def increment_usage() -> None:
+    """Invalidate the entire cache after a new assistant message is persisted.
+
+    Called from the chat consumer after saving the assistant message.  This
+    guarantees that the next ``is_near_cap()`` reflects the newly created row.
+    """
+    _cache.clear()
+
 
 def _count_in_window(provider_name: str, since) -> int:
     """Cuenta mensajes de assistant con ese provider desde ``since``."""
 
+    # Determine cache key based on window width.
+    window = "rpm" if (timezone.now() - since).total_seconds() <= 120 else "rpd"
+    cached = _get_cached_count(provider_name, window)
+    if cached is not None:
+        return cached
+
     # Import lazy para evitar problemas de import circular en arranque.
     from apps.chat.models import Message
 
-    return (
+    count = (
         Message.objects.filter(
             role="assistant",
             metadata__provider=provider_name,
             created_at__gte=since,
         ).count()
     )
+    _set_cached_count(provider_name, window, count)
+    return count
 
 
 def usage_snapshot(provider: dict[str, Any]) -> dict[str, Any]:
