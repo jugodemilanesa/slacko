@@ -137,7 +137,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self._save_message(self.session.id, "user", user_text, {})
 
         try:
-            turn = await self._run_turn(self.session.id, user_text)
+            turn = await self._run_turn(self.session, user_text)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Orchestrator crashed on session %s", self.session.id)
             await self.send_json(
@@ -163,6 +163,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             tool_calls=turn.tool_calls,
             citations=turn.citations,
         )
+
+        # Invalidate quota cache so the next turn reflects this new message.
+        from apps.orchestrator.usage import increment_usage
+
+        increment_usage()
 
         await self.send_json(
             {
@@ -228,9 +233,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def _run_turn(self, session_id, user_text: str):
-        from apps.chat.models import Session
+    def _run_turn(self, session, user_text: str):
         from apps.orchestrator.orchestrator import run_turn
 
-        session = Session.objects.get(id=session_id)
         return run_turn(session, user_text)
