@@ -145,10 +145,9 @@
 		writing-mode: vertical-rl;
 		transform: rotate(180deg);
 		text-align: center;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 	}
 
 	.spine-label {
@@ -170,10 +169,9 @@
 
 	.category-pill {
 		display: inline-block;
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		background: rgba(212, 168, 83, 0.08);
 		border: 1px solid rgba(212, 168, 83, 0.3);
@@ -275,10 +273,9 @@
 	}
 
 	.aliases-label {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.15em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.4rem;
 	}
@@ -335,10 +332,9 @@
 	}
 
 	.related-label {
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 	}
 

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="out"></div>
+<script>
+const content = "Hola! Soy **Slacko**, tu tutor.\n\nNueva linea.";
+let tokens = [];
+let isBold = false;
+for (let i = 0; i < content.length; i++) {
+    if (content[i] === '*' && content[i+1] === '*') {
+        isBold = !isBold;
+        i++;
+        continue;
+    }
+    tokens.push({ char: content[i] === '\n' ? '<br/>' : content[i], isBold });
+}
+
+let out = document.getElementById("out");
+let length = 0;
+setInterval(() => {
+    if (length <= tokens.length) {
+        let html = "";
+        let currentlyBold = false;
+        for (let i=0; i<length; i++) {
+            if (tokens[i].isBold && !currentlyBold) { html += "<strong>"; currentlyBold = true; }
+            if (!tokens[i].isBold && currentlyBold) { html += "</strong>"; currentlyBold = false; }
+            html += tokens[i].char;
+        }
+        if (currentlyBold) html += "</strong>";
+        out.innerHTML = html;
+        length++;
+    }
+}, 50);
+</script>
+</body>
+</html>

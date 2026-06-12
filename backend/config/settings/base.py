@@ -1,7 +1,6 @@
 """Base settings for Slacko project."""
 
 import os
-from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -126,21 +125,36 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # --- DRF ---
 
 REST_FRAMEWORK = {
+    # Auth por sesión de Django: el login crea una sesión server-side y el
+    # browser maneja la cookie httpOnly. Sin tokens en el front. CSRF se exige
+    # en métodos no seguros para requests ya autenticados (ver SessionAuthentication).
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
 
-# --- JWT ---
+# --- Sesiones (Django nativo) ---
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "AUTH_HEADER_TYPES": ("Bearer",),
-}
+# Sesión deslizante de 14 días: cada request con actividad renueva la expiración,
+# así un alumno activo no se desloguea. La cookie es httpOnly (no accesible por
+# JS → inmune a robo por XSS) y SameSite=Lax.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG  # en prod (HTTPS) la cookie viaja solo por TLS
+# La cookie CSRF sí debe ser legible por JS para mandar el header X-CSRFToken.
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+# Orígenes confiables para CSRF (el front que consume la API por cookie).
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+)
 
 # --- dj-rest-auth + allauth ---
 
@@ -155,13 +169,27 @@ AUTHENTICATION_BACKENDS = [
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+# El email es identificador unívoco: lo exigimos único a nivel allauth para
+# que ni el signup local ni el social puedan duplicarlo.
+ACCOUNT_UNIQUE_EMAIL = True
+
+# Identidad unívoca por email, AGNÓSTICA al método de acceso. Si alguien entra
+# con Google y ya existe una cuenta local con ese email —haya nacido por
+# usuario/contraseña o por un Google previo— allauth la reconoce y conecta el
+# social account a esa misma cuenta, sin duplicar. Y si no existe, crea una
+# nueva. Es nativo de allauth ≥65 (matchea contra User.email aunque no haya un
+# registro EmailAddress), así que no necesitamos adapter custom.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+# Google ya entrega el email verificado; no pedimos verificación extra.
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 
 REST_AUTH = {
-    "USE_JWT": True,
-    "JWT_AUTH_HTTPONLY": False,  # frontend reads the JWT from the JSON body
-    "SESSION_LOGIN": False,
-    # JWT-only: disable the default DRF Token model so dj-rest-auth doesn't
-    # require `rest_framework.authtoken` in INSTALLED_APPS.
+    # Login por sesión de Django (sin JWT). dj-rest-auth hace
+    # ``django.contrib.auth.login`` y deja la sesión en la cookie.
+    "USE_JWT": False,
+    "SESSION_LOGIN": True,
+    # Sin tokens DRF: evita requerir `rest_framework.authtoken` en INSTALLED_APPS.
     "TOKEN_MODEL": None,
     "REGISTER_SERIALIZER": "apps.accounts.serializers.RegisterSerializer",
     "USER_DETAILS_SERIALIZER": "apps.accounts.serializers.UserSerializer",
@@ -176,7 +204,9 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {"access_type": "online"},
-        "OAUTH_PKCE_ENABLED": True,
+        # Flujo access_token (GIS en el frontend → access_token → backend). No
+        # hay intercambio de code en el server, así que PKCE no aplica.
+        "OAUTH_PKCE_ENABLED": False,
     },
 }
 
@@ -189,6 +219,9 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173"],
 )
+# Necesario para que el browser mande/acepte la cookie de sesión en requests
+# cross-origin (si el front no estuviera detrás del mismo origin vía proxy).
+CORS_ALLOW_CREDENTIALS = True
 
 # --- Channels ---
 
@@ -213,14 +246,15 @@ CHANNEL_LAYERS = {
 LLM_PROVIDERS = [
     {
         "name": "gemini",
-        "model": env("GEMINI_MODEL", default="gemini/gemini-2.5-flash"),
+        "model": env("GEMINI_MODEL", default="gemini/gemini-3.1-flash-lite"),
         "api_key": env("GEMINI_API_KEY", default=""),
         "rpm": 10,
         "rpd": 1500,
-        # Gemini 2.5 Flash thinking-mode a veces emite la tool call como texto
-        # (`tool_code print(default_api.foo(...))`) en vez de un tool_call
-        # estructurado. `reasoning_effort="none"` mapea a thinkingBudget=0 +
-        # includeThoughts=False en LiteLLM, lo que evita esa fuga.
+        # Los modelos Gemini con thinking-mode a veces emiten la tool call como
+        # texto (`tool_code print(default_api.foo(...))`) en vez de un tool_call
+        # estructurado. En Gemini 3.1 Flash-Lite `reasoning_effort="none"` mapea
+        # al nivel de thinking MINIMAL (el mínimo disponible en la familia 3.x),
+        # lo que minimiza esa fuga sin pagar latencia de razonamiento extendido.
         "extra_params": {"reasoning_effort": "none"},
     },
     {

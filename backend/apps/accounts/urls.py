@@ -1,20 +1,17 @@
-from django.urls import include, path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.urls import path
 
 from . import views
 
 app_name = "accounts"
 
 urlpatterns = [
-    # Legacy endpoints (kept for backward compat with the current frontend).
+    # Bootstrap de CSRF (setea la cookie csrftoken).
+    path("csrf/", views.CSRFView.as_view(), name="csrf"),
+    # Auth por sesión.
     path("register/", views.RegisterView.as_view(), name="register"),
-    path("login/", TokenObtainPairView.as_view(), name="token_obtain"),
-    path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("login/", views.LoginView.as_view(), name="login"),
+    path("logout/", views.LogoutView.as_view(), name="logout"),
     path("me/", views.MeView.as_view(), name="me"),
-    # dj-rest-auth full surface: password reset, change, user details, logout.
-    path("", include("dj_rest_auth.urls")),
-    # dj-rest-auth registration (extra endpoints beyond legacy register/).
-    path("registration/", include("dj_rest_auth.registration.urls")),
-    # Social login.
+    # Login con Google (deja sesión de Django).
     path("google/", views.GoogleLogin.as_view(), name="google_login"),
 ]

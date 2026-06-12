@@ -134,7 +134,7 @@
 <aside class="sidebar" class:open aria-hidden={!open} aria-label="Historial de chats">
 	<header class="head">
 		<div>
-			<div class="overline">Historial</div>
+			<div class="super-title">Historial</div>
 			<h2 class="title">Tus chats</h2>
 		</div>
 		<button type="button" class="close" onclick={() => (open = false)} aria-label="Cerrar">×</button>
@@ -275,11 +275,10 @@
 		border-bottom: 1px dashed var(--color-bot-border);
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.25rem;
 	}
@@ -355,10 +354,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		cursor: pointer;
 	}

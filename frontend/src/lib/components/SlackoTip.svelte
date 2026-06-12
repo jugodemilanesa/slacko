@@ -25,7 +25,7 @@
 		note: '¶'
 	};
 
-	const overline: Record<TipKind, string> = {
+	const superTitle: Record<TipKind, string> = {
 		tip: 'Slacko tip',
 		concept: 'Concepto',
 		warning: 'Cuidado',
@@ -40,14 +40,14 @@
 	class="slacko-tip"
 	class:dense
 	data-kind={kind}
-	aria-label={overline[kind]}
+	aria-label={superTitle[kind]}
 >
 	<div class="marker" aria-hidden="true">
 		<span class="glyph">{glyph[kind]}</span>
 	</div>
 	<div class="body">
 		<header class="tip-head">
-			<span class="overline">{overline[kind]}</span>
+			<span class="super-title">{superTitle[kind]}</span>
 			{#if title}
 				<span class="dot">·</span>
 				<span class="title">{title}</span>
@@ -175,22 +175,21 @@
 		display: flex;
 		align-items: baseline;
 		gap: 0.35rem;
-		font-family: var(--font-mono, 'JetBrains Mono');
-		font-size: 0.62rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted, #6b6982);
 		margin-bottom: 0.25rem;
 	}
 
-	.overline {
+	.super-title {
 		color: var(--color-accent, #d4a853);
 	}
 
-	.slacko-tip[data-kind='warning'] .overline {
+	.slacko-tip[data-kind='warning'] .super-title {
 		color: var(--color-error, #d44848);
 	}
-	.slacko-tip[data-kind='concept'] .overline {
+	.slacko-tip[data-kind='concept'] .super-title {
 		color: var(--color-primary, #3b4cc0);
 	}
 

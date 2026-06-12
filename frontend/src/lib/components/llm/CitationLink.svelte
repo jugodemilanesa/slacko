@@ -67,7 +67,7 @@
 	<div class="drawer" role="dialog" aria-modal="true" aria-label="Concepto del wiki">
 		<header class="head">
 			<div>
-				<div class="overline">Concepto del wiki</div>
+				<div class="super-title">Concepto del wiki</div>
 				<h2 class="title">{concept?.title ?? inferredTitle}</h2>
 				{#if concept?.category}
 					<div class="cat">{concept.category.replace(/-/g, ' ')}</div>
@@ -119,7 +119,6 @@
 		font-family: var(--font-body);
 		font-size: 0.75rem;
 		cursor: pointer;
-		transition: all 0.18s ease;
 		line-height: 1.4;
 		white-space: nowrap;
 	}
@@ -182,11 +181,10 @@
 		border-bottom: 1px dashed var(--color-bot-border);
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.25rem;
 	}
@@ -201,10 +199,9 @@
 	}
 
 	.cat {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-top: 0.4rem;
 	}
@@ -282,10 +279,9 @@
 	}
 
 	.err-label {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-error);
 		margin-bottom: 0.2rem;
 	}

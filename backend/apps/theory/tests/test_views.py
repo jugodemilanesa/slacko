@@ -30,17 +30,17 @@ def anon_client() -> APIClient:
 class TestAuth:
     def test_categories_requires_auth(self, anon_client: APIClient) -> None:
         response = anon_client.get(reverse("theory:categories"))
-        assert response.status_code == 401
+        assert response.status_code in (401, 403)
 
     def test_concepts_requires_auth(self, anon_client: APIClient) -> None:
         response = anon_client.get(reverse("theory:concepts"))
-        assert response.status_code == 401
+        assert response.status_code in (401, 403)
 
     def test_query_requires_auth(self, anon_client: APIClient) -> None:
         response = anon_client.post(
             reverse("theory:query"), {"question": "qué es PL"}, format="json"
         )
-        assert response.status_code == 401
+        assert response.status_code in (401, 403)
 
 
 class TestCategoryList:

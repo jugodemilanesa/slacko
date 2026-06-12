@@ -39,6 +39,18 @@
 
 	let localConstraints: Constraint[] = $state([...get(model).constraints]);
 
+	function isValidNumber(val: string | number) {
+		const str = String(val);
+		if (str.trim() === '') return false;
+		return !isNaN(Number(str));
+	}
+
+	function isInvalidInput(val: string | number) {
+		const str = String(val);
+		if (str.trim() === '') return false;
+		return isNaN(Number(str));
+	}
+
 	function resetForm() {
 		label = '';
 		coeff1 = '';
@@ -53,7 +65,7 @@
 	}
 
 	function buildStandard(): Constraint | null {
-		if (!label.trim() || coeff1 === '' || coeff2 === '' || rhs === '') return null;
+		if (!label.trim() || !isValidNumber(coeff1) || !isValidNumber(coeff2) || !isValidNumber(rhs)) return null;
 		return {
 			label: label.trim(),
 			coefficients: [Number(coeff1), Number(coeff2)],
@@ -63,7 +75,7 @@
 	}
 
 	function buildMixing(): Constraint | null {
-		if (mixPercent === '' || Number(mixPercent) <= 0 || Number(mixPercent) >= 100) return null;
+		if (!isValidNumber(mixPercent) || Number(mixPercent) <= 0 || Number(mixPercent) >= 100) return null;
 		const m = get(model);
 		const spec: MixingSpec = {
 			mode: mixModeKind,
@@ -130,17 +142,17 @@
 	}
 
 	const canAddStandard = $derived(
-		label.trim() !== '' && coeff1 !== '' && coeff2 !== '' && rhs !== ''
+		label.trim() !== '' && isValidNumber(coeff1) && isValidNumber(coeff2) && isValidNumber(rhs)
 	);
 
 	const canAddMixing = $derived(
-		mixPercent !== '' && Number(mixPercent) > 0 && Number(mixPercent) < 100
+		isValidNumber(mixPercent) && Number(mixPercent) > 0 && Number(mixPercent) < 100
 	);
 
 	const canAdd = $derived(mode === 'standard' ? canAddStandard : canAddMixing);
 
 	const mixingPreview = $derived.by(() => {
-		if (mixPercent === '') return null;
+		if (!isValidNumber(mixPercent)) return null;
 		const m = get(model);
 		const spec: MixingSpec = {
 			mode: mixModeKind,
@@ -230,7 +242,7 @@
 	<div class="form-card">
 		{#if editingIndex !== null}
 			<div class="edit-banner">
-				<span class="overline">Editando R{editingIndex + 1}</span>
+				<span class="super-title">Editando R{editingIndex + 1}</span>
 				<button type="button" class="cancel-btn" onclick={cancelEdit}>
 					Cancelar
 				</button>
@@ -254,24 +266,22 @@
 					<label class="lbl" for="c-coef1">Coef x₁</label>
 					<input
 						id="c-coef1"
-						type="number"
+						type="text"
 						bind:value={coeff1}
 						placeholder="0"
-						step="any"
 						inputmode="decimal"
-						class="num-input"
+						class="num-input {isInvalidInput(coeff1) ? 'invalid' : ''}"
 					/>
 				</div>
 				<div>
 					<label class="lbl" for="c-coef2">Coef x₂</label>
 					<input
 						id="c-coef2"
-						type="number"
+						type="text"
 						bind:value={coeff2}
 						placeholder="0"
-						step="any"
 						inputmode="decimal"
-						class="num-input"
+						class="num-input {isInvalidInput(coeff2) ? 'invalid' : ''}"
 					/>
 				</div>
 				<div>
@@ -286,12 +296,11 @@
 					<label class="lbl" for="c-rhs">Valor (RHS)</label>
 					<input
 						id="c-rhs"
-						type="number"
+						type="text"
 						bind:value={rhs}
 						placeholder="0"
-						step="any"
 						inputmode="decimal"
-						class="num-input"
+						class="num-input {isInvalidInput(rhs) ? 'invalid' : ''}"
 					/>
 				</div>
 				<button
@@ -328,14 +337,11 @@
 					<option value="max">a lo sumo</option>
 				</select>
 				<input
-					type="number"
+					type="text"
 					bind:value={mixPercent}
 					placeholder="25"
-					min="0"
-					max="100"
-					step="any"
 					inputmode="decimal"
-					class="num-input compact percent"
+					class="num-input compact percent {isInvalidInput(mixPercent) ? 'invalid' : ''}"
 				/>
 				<span class="sentence-text">% del total.</span>
 			</div>
@@ -532,11 +538,10 @@
 		margin: -0.25rem -0.25rem 0.25rem -0.25rem;
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 	}
 
@@ -602,6 +607,16 @@
 		outline: none;
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
 		border-color: var(--color-primary);
+	}
+
+	.num-input.invalid {
+		border-color: rgba(239, 68, 68, 0.6);
+		background-color: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+	}
+	.num-input.invalid:focus {
+		box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+		border-color: #ef4444;
 	}
 
 	.grid-form {
@@ -697,10 +712,9 @@
 	}
 
 	.preview-label {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.1rem;
 	}

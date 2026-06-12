@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.bubble-shrink {
+    display: inline-block;
+    max-width: 150px;
+    background: #eee;
+    padding: 10px;
+    font-family: sans-serif;
+    margin-bottom: 20px;
+}
+.bubble-max {
+    width: max-content;
+    max-width: 150px;
+    background: #ccc;
+    padding: 10px;
+    font-family: sans-serif;
+}
+</style>
+</head>
+<body>
+<div class="bubble-shrink" id="b1"></div>
+<div class="bubble-max" id="b2"></div>
+<script>
+const text = "Hola mundo esto es una prueba super larga para ver si salta.";
+let b1 = document.getElementById('b1');
+let b2 = document.getElementById('b2');
+let i = 0;
+setInterval(() => {
+    if (i <= text.length) {
+        b1.innerText = text.slice(0, i);
+        b2.innerText = text.slice(0, i);
+        i++;
+    }
+}, 100);
+</script>
+</body>
+</html>

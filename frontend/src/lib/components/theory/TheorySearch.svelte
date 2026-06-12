@@ -197,10 +197,9 @@
 
 	.search-label {
 		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.5rem;
 	}

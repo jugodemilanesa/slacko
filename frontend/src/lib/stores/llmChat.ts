@@ -41,6 +41,7 @@ export interface LLMChatMessage {
 	citations?: string[];
 	error?: string;
 	createdAt: string;
+	animate?: boolean;
 }
 
 export const session = writable<SessionSummary | null>(null);
@@ -66,11 +67,6 @@ function cacheSessionId(id: string | null) {
 	if (typeof window === 'undefined') return;
 	if (id) window.localStorage.setItem(STORAGE_KEY, id);
 	else window.localStorage.removeItem(STORAGE_KEY);
-}
-
-function getAccessToken(): string | null {
-	if (typeof window === 'undefined') return null;
-	return window.localStorage.getItem('access_token');
 }
 
 function fromDb(m: Message): LLMChatMessage {
@@ -105,13 +101,6 @@ export async function start(): Promise<void> {
 
 	status.set('connecting');
 	lastError.set(null);
-
-	const token = getAccessToken();
-	if (!token) {
-		status.set('error');
-		lastError.set('No estás autenticado. Volvé a iniciar sesión.');
-		return;
-	}
 
 	let active: SessionSummary | null = null;
 	const cached = loadCachedSessionId();
@@ -148,7 +137,7 @@ export async function start(): Promise<void> {
 	session.set(active);
 	cacheSessionId(active.id);
 
-	socket = connectChat(active.id, token, {
+	socket = connectChat(active.id, {
 		onOpen: () => status.set('open'),
 		onMessage: (msg) => {
 			messages.update((arr) => [
@@ -162,7 +151,8 @@ export async function start(): Promise<void> {
 					toolCalls: msg.tool_calls,
 					citations: msg.citations,
 					error: msg.metadata?.error as string | undefined,
-					createdAt: new Date().toISOString()
+					createdAt: new Date().toISOString(),
+					animate: true
 				}
 			]);
 			status.set('open');

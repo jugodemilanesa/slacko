@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.parent {
+    width: 800px;
+    background: #ddd;
+    padding: 20px;
+}
+.row-bug {
+    display: flex;
+    justify-content: flex-start;
+    position: relative;
+    background: #f99;
+    margin-bottom: 20px;
+}
+.row-fixed {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    position: relative;
+    background: #9f9;
+}
+.measure {
+    position: absolute;
+    max-width: 75%;
+    visibility: hidden;
+    font-family: Arial;
+    padding: 10px;
+}
+.bubble {
+    max-width: 75%;
+    padding: 10px;
+    background: white;
+}
+</style>
+</head>
+<body>
+<div class="parent">
+    <!-- Bugged row (not w-full) -->
+    <div class="row-bug">
+        <div class="measure" id="m1">Hola mundo esto es una prueba super larga para medir el ancho. Hola mundo esto es una prueba super larga para medir el ancho.</div>
+        <div class="bubble" id="b1"></div>
+    </div>
+    
+    <!-- Fixed row (w-full) -->
+    <div class="row-fixed">
+        <div class="measure" id="m2">Hola mundo esto es una prueba super larga para medir el ancho. Hola mundo esto es una prueba super larga para medir el ancho.</div>
+        <div class="bubble" id="b2"></div>
+    </div>
+</div>
+<script>
+    let m1 = document.getElementById('m1');
+    let b1 = document.getElementById('b1');
+    b1.style.width = m1.getBoundingClientRect().width + 'px';
+    b1.innerText = "Corto";
+
+    let m2 = document.getElementById('m2');
+    let b2 = document.getElementById('b2');
+    b2.style.width = m2.getBoundingClientRect().width + 'px';
+    b2.innerText = "Corto";
+
+    console.log("Bugged width:", m1.getBoundingClientRect().width);
+    console.log("Fixed width:", m2.getBoundingClientRect().width);
+</script>
+</body>
+</html>

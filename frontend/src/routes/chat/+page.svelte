@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
-	import { isAuthenticated, clearTokens } from '$lib/api/client';
+	import { checkAuth, logout as apiLogout } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
 	import {
 		currentState,
@@ -37,6 +37,8 @@
 	import TheoryMode from '$lib/components/steps/TheoryMode.svelte';
 	import TutorialMode from '$lib/components/steps/TutorialMode.svelte';
 	import LLMChatMode from '$lib/components/steps/LLMChatMode.svelte';
+	import ProviderBadge from '$lib/components/llm/ProviderBadge.svelte';
+	import { messages as llmMessages } from '$lib/stores/llmChat';
 
 	let chatContainer: HTMLDivElement;
 	let sidebarOpen = $state(false);
@@ -213,6 +215,22 @@
 	const inLLMChatMode = $derived($currentState === 'LLM_CHAT');
 	const inFullMode = $derived(inTheoryMode || inTutorialMode || inLLMChatMode);
 
+	const lastAssistantProvider = $derived.by(() => {
+		const arr = $llmMessages;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].role === 'assistant' && arr[i].provider) return arr[i].provider;
+		}
+		return undefined;
+	});
+
+	const lastAssistantModel = $derived.by(() => {
+		const arr = $llmMessages;
+		for (let i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].role === 'assistant' && arr[i].model) return arr[i].model;
+		}
+		return undefined;
+	});
+
 	let isWide = $state(false);
 	let sidebarManuallyClosed = $state(false);
 	let tipsManuallyClosed = $state(false);
@@ -259,10 +277,11 @@
 	});
 
 	onMount(() => {
-		if (!isAuthenticated()) {
-			goto('/login');
-			return;
-		}
+		// La sesión vive en cookie httpOnly: validamos contra el backend y, si no
+		// hay sesión, redirigimos al login.
+		checkAuth().then((ok) => {
+			if (!ok) goto('/login');
+		});
 
 		// Set up media query listener for wide screens
 		const mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -296,8 +315,8 @@
 		});
 	});
 
-	function logout() {
-		clearTokens();
+	async function logout() {
+		await apiLogout();
 		goto('/login');
 	}
 
@@ -348,6 +367,11 @@
 						>
 							Chat con IA
 						</span>
+						{#if lastAssistantProvider || lastAssistantModel}
+							<div class="ml-2 mt-1">
+								<ProviderBadge provider={lastAssistantProvider} model={lastAssistantModel} />
+							</div>
+						{/if}
 					{:else if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
 						<span
 							class="text-[0.65rem] tracking-[0.18em] uppercase font-mono text-primary
@@ -421,23 +445,11 @@
 					{#if $isGuidedFlow && $currentState !== 'SELECT_MODE'}
 						<header class="secondary-header">
 							<div class="lh-inner">
-								<div class="lh-left">
-									<span class="title">Paso {$currentStepIndex + 1}: {STEP_LABELS[$currentState]}</span>
-									<div class="w-[120px] sm:w-[180px] md:w-[240px]">
+								<div class="lh-left flex-1 w-full">
+									<span class="title shrink-0">Paso {$currentStepIndex + 1}: {STEP_LABELS[$currentState]}</span>
+									<div class="flex-1 min-w-0">
 										<ProgressBar />
 									</div>
-								</div>
-
-								<div class="lh-right">
-									<button
-										type="button"
-										class="lh-btn cursor-pointer"
-										onclick={handleNewChat}
-										title="Reiniciar y volver al menú principal"
-									>
-										<span class="btn-glyph">↺</span>
-										Reiniciar
-									</button>
 								</div>
 							</div>
 						</header>
@@ -505,7 +517,7 @@
 							<div class="relative z-10 h-[96px] flex items-end justify-center shrink-0">
 								<div class="w-full max-w-[90vw] md:max-w-4xl lg:max-w-5xl flex justify-start">
 									{#each $messages as msg (msg.id)}
-										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+										<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={$currentState === 'SELECT_MODE'} />
 									{/each}
 
 									{#if $assistantThinking}
@@ -516,7 +528,7 @@
 						{:else}
 							<!-- Rendered messages (con expresión por mensaje) -->
 							{#each $messages as msg (msg.id)}
-								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} />
+								<ChatMessage role={msg.role} content={msg.content} expression={msg.expression} step={msg.step} animate={msg.animate ?? false} />
 							{/each}
 
 							<!-- Indicador de tipeo mientras Slacko 'piensa' -->
@@ -634,7 +646,7 @@
 	.secondary-header {
 		position: relative;
 		z-index: 5;
-		padding: 0.55rem 1.5rem;
+		padding: 0.9rem 1.5rem;
 		background-color: color-mix(in srgb, var(--color-surface) 92%, transparent);
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
@@ -655,18 +667,18 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		min-width: 0;
+		width: 100%;
 	}
 
 	.chip {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink);
 		padding: 0.3rem 0.7rem 0.3rem 0.5rem;
 		border-radius: 999px;
@@ -720,37 +732,6 @@
 		white-space: nowrap;
 	}
 
-	.lh-right {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
-	}
-
-	.lh-btn {
-		font-family: var(--font-body);
-		font-size: 0.78rem;
-		padding: 0.42rem 0.9rem;
-		border-radius: 999px;
-		cursor: pointer;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		border: 1px solid var(--color-bot-border);
-		background: var(--color-surface-card);
-		color: var(--color-ink);
-	}
-
-	.lh-btn:hover {
-		border-color: var(--color-primary);
-		color: var(--color-primary);
-	}
-
-	.btn-glyph {
-		font-family: var(--font-mono);
-		font-size: 0.9rem;
-		color: var(--color-accent);
-		line-height: 1;
-	}
 
 	@keyframes pulse {
 		0%,

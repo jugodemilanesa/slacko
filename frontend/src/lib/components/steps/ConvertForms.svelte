@@ -68,7 +68,7 @@
 	{:else if $standardFormResult}
 		<article class="standard-card">
 			<header class="card-head">
-				<span class="overline">Forma estándar</span>
+				<span class="super-title">Forma estándar</span>
 				<h3 class="title">Modelo expandido</h3>
 			</header>
 
@@ -149,11 +149,10 @@
 		border-bottom: 1px dashed var(--color-bot-border);
 	}
 
-	.overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		display: block;
 		margin-bottom: 0.2rem;
@@ -213,10 +212,9 @@
 	}
 
 	.eq-label {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		margin-bottom: 0.15rem;
 	}

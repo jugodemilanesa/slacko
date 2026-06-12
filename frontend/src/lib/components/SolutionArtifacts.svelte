@@ -292,10 +292,9 @@
 	}
 
 	.head-label {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 	}
 
@@ -333,10 +332,9 @@
 	.t-th {
 		text-align: left;
 		padding: 0.55rem 0.9rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-ink-muted);
 		background: var(--color-surface-warm, #fff7e8);
 		border-bottom: 1px solid var(--color-bot-border);

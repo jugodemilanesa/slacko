@@ -1,19 +1,24 @@
 <script lang="ts">
-	import { register } from '$lib/api/auth';
+	import { onMount } from 'svelte';
+	import { register, loginWithGoogle, preloadGoogle } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
-	import { isDarkMode, toggleDarkMode } from '$lib/stores/theme';
+	import AuthShell from '$lib/components/auth/AuthShell.svelte';
+	import GoogleButton from '$lib/components/auth/GoogleButton.svelte';
 
 	let username = $state('');
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
+	let notice = $state('');
 	let loading = $state(false);
+	let googleLoading = $state(false);
+
+	onMount(() => preloadGoogle());
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		error = '';
 		loading = true;
-
 		try {
 			await register(username, email, password);
 			goto('/chat');
@@ -23,93 +28,106 @@
 			loading = false;
 		}
 	}
+
+	async function handleGoogle() {
+		error = '';
+		googleLoading = true;
+		try {
+			const res = await loginWithGoogle();
+			if (res.linkedExisting) {
+				notice = 'Ya tenías una cuenta con este correo. La vinculamos con tu cuenta de Google.';
+			} else {
+				goto('/chat');
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'No se pudo iniciar el login con Google';
+		} finally {
+			googleLoading = false;
+		}
+	}
 </script>
 
-<div class="relative flex items-center justify-center min-h-screen bg-surface overflow-hidden">
-	<!-- Theme Switcher Button -->
-	<div class="absolute top-4 right-4 z-20">
-		<button
-			onclick={toggleDarkMode}
-			class="w-10 h-10 rounded-lg bg-surface-card border border-bot-border flex items-center justify-center
-				text-ink-muted hover:text-ink hover:border-ink transition-all cursor-pointer shadow-sm hover:scale-[1.03]"
-			title={$isDarkMode ? 'Modo claro' : 'Modo oscuro'}
-		>
-			{#if $isDarkMode}
-				<!-- Sun icon -->
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-			{:else}
-				<!-- Moon icon -->
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-			{/if}
+<AuthShell eyebrow="CREÁ TU CUENTA">
+	{#if notice}
+		<div class="auth-notice">{notice}</div>
+		<button type="button" class="auth-submit" onclick={() => goto('/chat')}>
+			<span>Ir a Slacko</span>
+			<span class="auth-submit-arrow" aria-hidden="true">→</span>
 		</button>
-	</div>
+	{:else}
+	<form onsubmit={handleSubmit} class="space-y-4">
+		{#if error}
+			<div class="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-lg whitespace-pre-line">
+				{error}
+			</div>
+		{/if}
 
-	<!-- Background Image at the top with a gradient fading to the page background (crossfaded between themes) -->
-	<div class="absolute top-0 left-0 right-0 h-[420px] pointer-events-none select-none z-0 overflow-hidden" style="mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);">
-		<!-- Light mode background -->
-		<div class="absolute inset-0 light-bg-image bg-crossfade-container">
-			<img src="/background.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
+		<div>
+			<label for="username" class="block text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1.5">
+				Usuario
+			</label>
+			<input
+				id="username"
+				type="text"
+				autocomplete="username"
+				bind:value={username}
+				required
+				minlength={3}
+				maxlength={30}
+				pattern="[\w.\-]&#123;3,30&#125;"
+				class="auth-input"
+			/>
+			<p class="auth-hint">3–30 caracteres: letras, números, punto, guion o guion bajo.</p>
 		</div>
-		
-		<!-- Dark mode background -->
-		<div class="absolute inset-0 dark-bg-image bg-crossfade-container">
-			<img src="/background-dark.jpg" alt="" class="w-full h-full object-cover object-top opacity-35" />
+
+		<div>
+			<label for="email" class="block text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1.5">
+				Email
+			</label>
+			<input
+				id="email"
+				type="email"
+				autocomplete="email"
+				bind:value={email}
+				required
+				class="auth-input"
+			/>
+			<p class="auth-hint">Tu correo es tu identidad — el mismo que uses para entrar con Google.</p>
 		</div>
-	</div>
 
-	<div class="relative z-10 w-full max-w-md p-8 bg-surface-card rounded-lg shadow-lg border border-bot-border">
-		<h1 class="text-3xl font-bold text-center text-ink mb-6 font-display">Registrarse</h1>
+		<div>
+			<label for="password" class="block text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1.5">
+				Contraseña
+			</label>
+			<input
+				id="password"
+				type="password"
+				autocomplete="new-password"
+				bind:value={password}
+				required
+				minlength={8}
+				class="auth-input"
+			/>
+			<p class="auth-hint">Mínimo 8 caracteres. Evitá contraseñas comunes o solo numéricas.</p>
+		</div>
 
-		<form onsubmit={handleSubmit} class="space-y-4">
-			{#if error}
-				<div class="p-3 text-sm text-error bg-error/10 border border-error/20 rounded whitespace-pre-line">{error}</div>
-			{/if}
+		<button type="submit" disabled={loading} class="auth-submit">
+			<span>{loading ? 'Creando cuenta…' : 'Crear cuenta'}</span>
+			{#if !loading}<span class="auth-submit-arrow" aria-hidden="true">→</span>{/if}
+		</button>
+	</form>
 
-			<div>
-				<label for="username" class="block text-sm font-medium text-ink-light">Usuario</label>
-				<input
-					id="username"
-					type="text"
-					bind:value={username}
-					required
-					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
-				/>
-			</div>
+	<div class="auth-divider"><span>o</span></div>
 
-			<div>
-				<label for="email" class="block text-sm font-medium text-ink-light">Email</label>
-				<input
-					id="email"
-					type="email"
-					bind:value={email}
-					required
-					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
-				/>
-			</div>
+	<GoogleButton
+		label={googleLoading ? 'Conectando…' : 'Registrarte con Google'}
+		disabled={googleLoading}
+		onclick={handleGoogle}
+	/>
 
-			<div>
-				<label for="password" class="block text-sm font-medium text-ink-light">Contraseña</label>
-				<input
-					id="password"
-					type="password"
-					bind:value={password}
-					required
-					minlength={6}
-					class="mt-1 w-full px-3 py-2 border border-bot-border bg-surface text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-card"
-				/>
-			</div>
-
-			<button
-				type="submit"
-				disabled={loading}
-				class="w-full py-2 px-4 bg-primary text-white font-medium rounded-md hover:bg-primary-light transition-colors cursor-pointer disabled:opacity-50"
-			>
-				{loading ? 'Registrando...' : 'Crear cuenta'}
-			</button>
-		</form>
-
-		<p class="mt-6 text-center text-sm text-ink-muted">
-			¿Ya tenés cuenta? <a href="/login" class="text-primary hover:text-primary-light hover:underline font-medium">Ingresá</a>
-		</p>
-	</div>
-</div>
+	<p class="mt-7 text-center text-sm text-ink-muted">
+		¿Ya tenés cuenta?
+		<a href="/login" class="text-primary hover:text-primary-light hover:underline font-medium">Ingresá</a>
+	</p>
+	{/if}
+</AuthShell>

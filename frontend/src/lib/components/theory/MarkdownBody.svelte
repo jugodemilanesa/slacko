@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { marked } from 'marked';
+	import DOMPurify from 'isomorphic-dompurify';
 
 	let { content }: { content: string } = $props();
 
@@ -8,7 +9,8 @@
 		breaks: false
 	});
 
-	const html = $derived(marked.parse(content) as string);
+	// Saneamos antes de {@html}: marked deja pasar HTML inline sin escapar.
+	const html = $derived(DOMPurify.sanitize(marked.parse(content) as string));
 </script>
 
 <div class="markdown-body">

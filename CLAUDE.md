@@ -201,6 +201,7 @@ Representación JSON que fluye por todos los módulos. Esta estructura es el con
 - **Idioma de commits y PRs:** español
 - **Branches:** `feature/<nombre>`, `fix/<nombre>`, `docs/<nombre>`
 - **Commits:** mensaje descriptivo en español, imperativo ("Agregar módulo solver", no "Agregado módulo solver")
+- **Autoría de commits:** no agregar atribución del asistente (sin líneas `Co-Authored-By: Claude` ni `Generated with Claude Code`). Los commits van solo a nombre del autor humano.
 - **No commitear:** `.env`, credenciales, API keys, `__pycache__`, `node_modules`, `.venv`
 - **Variables de entorno:** toda config sensible en `.env`, accedida via `django-environ` o equivalente
 

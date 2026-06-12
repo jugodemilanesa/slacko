@@ -18,6 +18,11 @@ from . import security, throttle
 logger = logging.getLogger(__name__)
 security_logger = logging.getLogger("apps.chat.security")
 
+# Tope de caracteres por mensaje del usuario. Un enunciado de PL largo entra
+# de sobra; más que esto es casi seguro abuso o un paste accidental enorme que
+# inflaría el contexto del LLM.
+MAX_MESSAGE_CHARS = 4000
+
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     """WebSocket consumer that runs every message through the orchestrator."""
@@ -34,6 +39,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4404)
             return
 
+        await self._touch_last_seen(user.id)
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -42,6 +48,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, content: dict):
         user_text = (content.get("message") or "").strip()
         if not user_text:
+            return
+
+        if len(user_text) > MAX_MESSAGE_CHARS:
+            await self.send_json(
+                {
+                    "type": "error",
+                    "message": (
+                        f"Tu mensaje es muy largo (máximo {MAX_MESSAGE_CHARS} "
+                        "caracteres). Resumilo o mandalo en partes."
+                    ),
+                    "details": "message_too_long",
+                }
+            )
             return
 
         user = self.scope.get("user")
@@ -166,6 +185,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return Session.objects.get(id=uuid.UUID(str(session_id)), user_id=user_id)
         except (Session.DoesNotExist, ValueError):
             return None
+
+    @database_sync_to_async
+    def _touch_last_seen(self, user_id: int):
+        """Marca presencia del usuario al abrir el WebSocket de chat."""
+        from django.utils import timezone
+
+        from apps.accounts.models import UserProfile
+
+        UserProfile.objects.filter(user_id=user_id).update(last_seen=timezone.now())
 
     @database_sync_to_async
     def _save_message(self, session_id, role: str, content: str, metadata: dict):

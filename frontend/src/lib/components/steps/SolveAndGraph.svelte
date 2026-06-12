@@ -90,7 +90,7 @@
 <div class="step-enter space-y-4">
 	{#if error}
 		<div class="error-banner">
-			<span class="overline">No pudimos resolver</span>
+			<span class="super-title">No pudimos resolver</span>
 			<p>{error}</p>
 		</div>
 	{:else if phase === 'solving'}
@@ -135,7 +135,7 @@
 			<!-- Tutorial collapsed reference -->
 			<details class="tutorial-collapsed">
 				<summary>
-					<span class="overline">Lección 01 · Método gráfico</span>
+					<span class="super-title">Lección 01 · Método gráfico</span>
 					<span class="see">Ver de nuevo</span>
 				</summary>
 				<div class="tutorial-collapsed-body">
@@ -166,7 +166,7 @@
 			{:else if phase === 'all-shown'}
 				<details class="tutorial-collapsed">
 					<summary>
-						<span class="overline">Lección 02 · Vértices</span>
+						<span class="super-title">Lección 02 · Vértices</span>
 						<span class="see">Ver de nuevo</span>
 					</summary>
 					<div class="tutorial-collapsed-body">
@@ -239,11 +239,10 @@
 		font-family: var(--font-body);
 	}
 
-	.error-banner .overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.error-banner .super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-error, #d44848);
 		display: block;
 		margin-bottom: 0.25rem;
@@ -278,10 +277,9 @@
 	}
 
 	.degen-label {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: #c8891a;
 		font-weight: 600;
 	}
@@ -319,11 +317,10 @@
 		display: none;
 	}
 
-	.tutorial-collapsed .overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+	.tutorial-collapsed .super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 	}
 

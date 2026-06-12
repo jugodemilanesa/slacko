@@ -157,7 +157,7 @@
 				<!-- Idle hero: two-column landing -->
 				<section class="hero-grid" aria-label="Bienvenida">
 					<div class="hero-left">
-						<div class="hero-overline">
+						<div class="hero-super-title">
 							<span class="ov-dot"></span>
 							Cuaderno de teoría
 							<span class="ov-dot"></span>
@@ -346,7 +346,7 @@
 	>
 		<header class="drawer-head">
 			<div>
-				<div class="drawer-overline">Explorar</div>
+				<div class="drawer-super-title">Explorar</div>
 				<h2 class="drawer-title">Temario</h2>
 			</div>
 			<button
@@ -447,10 +447,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		background: rgba(212, 168, 83, 0.08);
 		border: 1px solid rgba(212, 168, 83, 0.35);
@@ -601,14 +600,13 @@
 		}
 	}
 
-	.hero-overline {
+	.hero-super-title {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.6rem;
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.32em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 1.1rem;
 	}
@@ -862,10 +860,9 @@
 	}
 
 	.error-label {
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-error);
 		margin-bottom: 0.1rem;
 	}
@@ -980,11 +977,10 @@
 		border-bottom: 1px dashed var(--color-bot-border);
 	}
 
-	.drawer-overline {
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
+	.drawer-super-title {
+		font-family: var(--font-display);
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: var(--color-accent);
 		margin-bottom: 0.25rem;
 	}
