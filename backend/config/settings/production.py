@@ -4,6 +4,10 @@ from .base import *  # noqa: F401, F403
 
 DEBUG = False
 
+# Railway healthcheck usa Host: healthcheck.railway.app — Django lo rechaza
+# si no está en ALLOWED_HOSTS.
+ALLOWED_HOSTS.append("healthcheck.railway.app")  # noqa: F405
+
 # Persistent DB connections (10 min) to avoid TCP reconnection overhead
 # in WebSocket consumers that issue multiple queries per turn.
 DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
