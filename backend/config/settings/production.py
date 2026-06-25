@@ -8,6 +8,14 @@ DEBUG = False
 # in WebSocket consumers that issue multiple queries per turn.
 DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
 
+# Static files via whitenoise (Django admin assets en producción)
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # --- Cookies cross-site (deploy split: frontend en Vercel, backend en otro
 # dominio). Para que el browser mande la cookie de sesión a otro origen hace
 # falta SameSite=None + Secure. Requiere HTTPS (Railway/Vercel lo dan).
