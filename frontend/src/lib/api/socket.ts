@@ -42,7 +42,7 @@ export interface ChatSocketHandlers {
 }
 
 export interface ChatSocket {
-	send: (text: string) => void;
+	send: (text: string, opts?: { personality?: boolean }) => void;
 	close: () => void;
 	readonly status: 'connecting' | 'open' | 'closed';
 }
@@ -115,7 +115,7 @@ export function connectChat(sessionId: string, handlers: ChatSocketHandlers): Ch
 	open();
 
 	return {
-		send(text: string) {
+		send(text: string, opts?: { personality?: boolean }) {
 			if (!socket || socket.readyState !== WebSocket.OPEN) {
 				handlers.onError?.({
 					type: 'error',
@@ -124,7 +124,12 @@ export function connectChat(sessionId: string, handlers: ChatSocketHandlers): Ch
 				});
 				return;
 			}
-			socket.send(JSON.stringify({ message: text }));
+			socket.send(
+				JSON.stringify({
+					message: text,
+					personality: opts?.personality ?? true
+				})
+			);
 		},
 		close() {
 			manuallyClosed = true;

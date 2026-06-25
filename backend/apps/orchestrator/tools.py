@@ -527,12 +527,33 @@ def _handle_graph_lp(args: dict[str, Any], session) -> dict[str, Any]:
     solved = _handle_solve_lp(args, session)
     if not solved.get("ok"):
         return solved
+
+    # The frontend chart component expects tuples [x, y], not objects
+    # with x1/x2 keys. Convert the solver output here so the contract
+    # is explicit and consistent.
+    vertices = solved.get("vertices", [])
+    feasible = solved.get("feasible_vertices", [])
+    optimal = solved.get("optimal_point")
+
     return {
         "ok": True,
         "plot_payload": {
-            "vertices": solved.get("vertices", []),
-            "feasible_vertices": solved.get("feasible_vertices", []),
-            "optimal_point": solved.get("optimal_point"),
+            "vertices": [
+                [float(v["x1"]), float(v["x2"])]
+                for v in vertices
+                if isinstance(v, dict)
+            ],
+            "feasible_vertices": [
+                [float(v["x1"]), float(v["x2"])]
+                for v in feasible
+                if isinstance(v, dict)
+            ],
+            "optimal_point": (
+                [float(optimal["x1"]), float(optimal["x2"])]
+                if isinstance(optimal, dict)
+                else None
+            ),
+            "optimal_value": solved.get("optimal_value"),
             "constraints": args.get("model", {}).get("constraints", []),
         },
     }

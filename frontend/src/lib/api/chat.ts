@@ -36,6 +36,7 @@ export interface ChatToolCall {
 	name: string;
 	arguments: string; // JSON string with the tool args
 	result_summary: string;
+	result_data?: Record<string, unknown> | null; // structured payload for graph/solve tools
 }
 
 export interface Message {

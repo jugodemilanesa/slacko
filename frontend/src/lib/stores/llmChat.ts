@@ -22,6 +22,7 @@ import {
 import { connectChat, type ChatSocket, type InboundError } from '$lib/api/socket';
 
 const STORAGE_KEY = 'slacko.llmSession';
+const PERSONALITY_KEY = 'slacko.personality';
 
 export type LLMStatus =
 	| 'idle'         // no socket yet
@@ -51,6 +52,27 @@ export const lastError = writable<string | null>(null);
 
 export const isThinking = derived(status, ($s) => $s === 'thinking');
 export const isLive = derived(status, ($s) => $s === 'open' || $s === 'thinking');
+
+// Personality toggle (true = Slacko responde con su personalidad; false =
+// respuesta directa del LLM). Se persiste en localStorage.
+export const personality = writable<boolean>(loadCachedPersonality());
+
+function loadCachedPersonality(): boolean {
+	if (typeof window === 'undefined') return true;
+	const raw = window.localStorage.getItem(PERSONALITY_KEY);
+	if (raw === null) return true;
+	return raw === 'true';
+}
+
+function cachePersonality(value: boolean) {
+	if (typeof window === 'undefined') return;
+	window.localStorage.setItem(PERSONALITY_KEY, String(value));
+}
+
+export function setPersonality(value: boolean) {
+	personality.set(value);
+	cachePersonality(value);
+}
 
 let socket: ChatSocket | null = null;
 
@@ -188,7 +210,7 @@ export function send(text: string): void {
 		{ id: genId(), role: 'user', content: trimmed, createdAt: now }
 	]);
 	status.set('thinking');
-	socket.send(trimmed);
+	socket.send(trimmed, { personality: get(personality) });
 }
 
 /**

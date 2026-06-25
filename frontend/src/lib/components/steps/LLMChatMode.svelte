@@ -4,6 +4,7 @@
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 	import ChatBubbleLLM from '$lib/components/llm/ChatBubbleLLM.svelte';
 	import LLMSessionSidebar from '$lib/components/llm/LLMSessionSidebar.svelte';
+	import ComposerMenu from '$lib/components/llm/ComposerMenu.svelte';
 
 	import {
 		messages,
@@ -289,27 +290,28 @@
 	<div class="composer">
 		<div class="composer-inner">
 			<div class="composer-rule" aria-hidden="true"></div>
-			<div class="composer-box">
-				<textarea
-					bind:this={textareaEl}
-					bind:value={composerValue}
-					oninput={onInput}
-					onkeydown={handleKey}
-					placeholder="Escribí tu mensaje…"
-					rows="1"
-					disabled={$status === 'connecting' || $status === 'reconnecting' || $status === 'error'}
-					aria-label="Mensaje para Slacko"
-				></textarea>
-				<button
-					type="button"
-					class="send"
-					onclick={submit}
-					disabled={!composerValue.trim() || $isThinking || $status !== 'open'}
-					aria-label="Enviar"
-				>
-					<span class="send-glyph">→</span>
-				</button>
-			</div>
+		<div class="composer-box">
+			<ComposerMenu />
+			<textarea
+				bind:this={textareaEl}
+				bind:value={composerValue}
+				oninput={onInput}
+				onkeydown={handleKey}
+				placeholder="Escribí tu mensaje…"
+				rows="1"
+				disabled={$status === 'connecting' || $status === 'reconnecting' || $status === 'error'}
+				aria-label="Mensaje para Slacko"
+			></textarea>
+			<button
+				type="button"
+				class="send"
+				onclick={submit}
+				disabled={!composerValue.trim() || $isThinking || $status !== 'open'}
+				aria-label="Enviar"
+			>
+				<span class="send-glyph">→</span>
+			</button>
+		</div>
 			<div class="composer-hint">
 				<span><span class="key">Enter</span> para enviar</span>
 				<span class="hint-sep">·</span>
@@ -906,13 +908,13 @@
 
 	.composer-box {
 		display: grid;
-		grid-template-columns: 1fr auto;
+		grid-template-columns: auto 1fr auto;
 		align-items: end;
-		gap: 0.65rem;
+		gap: 0.5rem;
 		background: var(--color-surface-card);
 		border: 1px solid var(--color-bot-border);
 		border-radius: 18px;
-		padding: 0.6rem 0.6rem 0.6rem 1rem;
+		padding: 0.6rem 0.6rem 0.6rem 0.85rem;
 	}
 
 	.composer-box:focus-within {

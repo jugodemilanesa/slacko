@@ -3,10 +3,10 @@
 	import DOMPurify from 'isomorphic-dompurify';
 
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
-	import ToolCallChip from './ToolCallChip.svelte';
 	import CitationLink from './CitationLink.svelte';
 	import ParseProblemArtifact from './ParseProblemArtifact.svelte';
 	import SolveLpArtifact from './SolveLpArtifact.svelte';
+	import ChatChart from './ChatChart.svelte';
 
 	import type { ChatToolCall } from '$lib/api/chat';
 
@@ -213,30 +213,34 @@
 		<div class="bot-accessories">
 			{#if progress === 1}
 				<div class="accessories-content">
-					{#if toolCalls.length > 0 || citations.length > 0}
+					{#if citations.length > 0}
 						<div class="chips">
-							{#each toolCalls as tool, i (i)}
-								<ToolCallChip {tool} />
-								{#if tool.name === 'theory_lookup'}
-									{#each citations as c, j (j)}
-										<CitationLink citation={c} />
-									{/each}
-								{/if}
+							{#each citations as c, i (i)}
+								<CitationLink citation={c} />
 							{/each}
-							{#if !toolCalls.some(t => t.name === 'theory_lookup') && citations.length > 0}
-								{#each citations as c, i (i)}
-									<CitationLink citation={c} />
-								{/each}
-							{/if}
 						</div>
 					{/if}
 
-					{#each parseTools as t, i (i)}
-						<ParseProblemArtifact args={t.arguments} />
-					{/each}
+					{#if solveTools.length === 0}
+						{#each parseTools as t, i (i)}
+							<ParseProblemArtifact args={t.arguments} />
+						{/each}
+					{/if}
 
 					{#each solveTools as t, i (i)}
-						<SolveLpArtifact toolName={t.name as 'solve_lp' | 'graph_lp'} args={t.arguments} />
+						{#if t.result_data && (t.result_data.plot_payload || t.result_data.optimal_point !== undefined)}
+							<ChatChart
+								payload={{
+									vertices: (t.result_data.vertices as Array<[number, number]> | undefined) ?? (t.result_data.plot_payload as any)?.vertices,
+									feasible_vertices: (t.result_data.feasible_vertices as Array<[number, number]> | undefined) ?? (t.result_data.plot_payload as any)?.feasible_vertices,
+									optimal_point: (t.result_data.optimal_point as [number, number] | null | undefined) ?? (t.result_data.plot_payload as any)?.optimal_point,
+									optimal_value: (t.result_data.optimal_value as number | null | undefined) ?? (t.result_data.plot_payload as any)?.optimal_value,
+									constraints: (t.result_data.constraints as any) ?? (t.result_data.plot_payload as any)?.constraints
+								}}
+							/>
+						{:else}
+							<SolveLpArtifact toolName={t.name as 'solve_lp' | 'graph_lp'} args={t.arguments} />
+						{/if}
 					{/each}
 				</div>
 			{/if}

@@ -50,6 +50,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if not user_text:
             return
 
+        # Optional client-side toggle: when False, the orchestrator uses the
+        # "direct" system prompt (no Slacko personality). Defaults to True to
+        # preserve prior behavior for older clients.
+        personality = bool(content.get("personality", True))
+
         if len(user_text) > MAX_MESSAGE_CHARS:
             await self.send_json(
                 {
@@ -137,7 +142,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self._save_message(self.session.id, "user", user_text, {})
 
         try:
-            turn = await self._run_turn(self.session, user_text)
+            turn = await self._run_turn(self.session, user_text, personality)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Orchestrator crashed on session %s", self.session.id)
             await self.send_json(
@@ -233,7 +238,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def _run_turn(self, session, user_text: str):
+    def _run_turn(self, session, user_text: str, personality: bool = True):
         from apps.orchestrator.orchestrator import run_turn
 
-        return run_turn(session, user_text)
+        return run_turn(session, user_text, personality=personality)
