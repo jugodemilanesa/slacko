@@ -14,6 +14,7 @@
  *   - parsing robusto del JSON entrante
  */
 
+import { env } from '$env/dynamic/public';
 import type { ChatToolCall } from './chat';
 
 export interface InboundMessage {
@@ -51,11 +52,9 @@ const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000];
 
 function wsUrlFor(sessionId: string): string {
-	// Vite proxies /ws/ to the backend in dev; in prod the same origin serves
-	// both. Build the URL from the current page origin to inherit ws/wss. La
-	// cookie de sesión autentica el handshake (mismo origin → el browser la manda).
-	const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-	return `${proto}://${location.host}/ws/chat/${sessionId}/`;
+	const apiBase = env.PUBLIC_API_URL || `${location.protocol}//${location.host}`;
+	const wsBase = apiBase.replace(/^http/, 'ws');
+	return `${wsBase}/ws/chat/${sessionId}/`;
 }
 
 export function connectChat(sessionId: string, handlers: ChatSocketHandlers): ChatSocket {

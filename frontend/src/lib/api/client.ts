@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+import { env } from '$env/dynamic/public';
+
+const API_BASE = env.PUBLIC_API_URL ? `${env.PUBLIC_API_URL}/api` : '/api';
 
 interface RequestOptions {
 	method?: string;
