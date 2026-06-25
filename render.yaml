@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: slacko-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: slacko-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: slacko-redis
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: slacko-api.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://slacko-web.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://slacko-web.onrender.com
+      - key: FRONTEND_BASE_URL
+        value: https://slacko-web.onrender.com
+      - key: GEMINI_API_KEY
+        sync: false
+
+  - type: web
+    name: slacko-web
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    envVars:
+      - key: PUBLIC_GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+
+  - type: postgres
+    name: slacko-db
+    plan: free
+
+  - type: keyvalue
+    name: slacko-redis
+    plan: free
+    ipAllowList: []
