@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { marked } from 'marked';
 	import DOMPurify from 'isomorphic-dompurify';
+	import katex from 'katex';
+	import 'katex/dist/katex.min.css';
 
 	import SlakingAvatar from '$lib/components/SlakingAvatar.svelte';
 	import CitationLink from './CitationLink.svelte';
@@ -38,6 +40,24 @@
 
 	marked.setOptions({ gfm: true, breaks: false });
 
+	function renderLatex(html: string): string {
+		return html
+			.replace(/\$\$(.*?)\$\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: true, throwOnError: false });
+				} catch {
+					return `$$${math}$$`;
+				}
+			})
+			.replace(/\$(?=[^$\d])([^\$\n]+?)\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: false, throwOnError: false });
+				} catch {
+					return `$${math}$`;
+				}
+			});
+	}
+
 	let displayedHtml = $state('');
 	let progress = $state(0);
 	let trueFinalSpineHeight = $state<number | null>(null);
@@ -45,8 +65,9 @@
 
 	// Sanitizamos la salida del LLM antes de inyectarla como HTML ({@html}):
 	// marked no escapa el HTML inline, así que sin esto sería un sink de XSS.
+	// renderLatex convierte $...$ y $$...$$ a KaTeX antes de sanitizar.
 	const parsed = $derived(
-		role === 'assistant' ? DOMPurify.sanitize(marked.parse(content || '') as string) : ''
+		role === 'assistant' ? DOMPurify.sanitize(renderLatex(marked.parse(content || '') as string)) : ''
 	);
 
 	onMount(() => {

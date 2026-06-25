@@ -6,11 +6,31 @@
 	import Latex from '$lib/components/Latex.svelte';
 	import SlackoTip from '$lib/components/SlackoTip.svelte';
 	import SolutionArtifacts from '$lib/components/SolutionArtifacts.svelte';
+	import katex from 'katex';
+	import 'katex/dist/katex.min.css';
 	import {
 		objectiveLatex,
 		constraintLatex,
 		nonNegativityLatex
 	} from '$lib/math/formula';
+
+	function renderLatex(text: string): string {
+		return text
+			.replace(/\$\$(.*?)\$\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: true, throwOnError: false });
+				} catch {
+					return `$$${math}$$`;
+				}
+			})
+			.replace(/\$(?=[^$\d])([^\$\n]+?)\$/g, (_, math) => {
+				try {
+					return katex.renderToString(math, { displayMode: false, throwOnError: false });
+				} catch {
+					return `$${math}$`;
+				}
+			});
+	}
 
 	// --- Tutorial model: balones de fútbol (x1) y juegos de ajedrez (x2) ---
 	const model: LPModel = {
@@ -242,10 +262,10 @@
 					<div class="bot-content">
 						<div class="bot-bubble">
 							<p>
-								{@html beat.text.replace(
+								{@html renderLatex(beat.text.replace(
 									/\*\*(.*?)\*\*/g,
 									'<strong>$1</strong>'
-								)}
+								))}
 							</p>
 						</div>
 						{#if beat.widget}
@@ -253,7 +273,7 @@
 								{#if beat.widget.type === 'enunciado'}
 									<article class="enunciado-card">
 										<div class="card-super-title">Enunciado</div>
-										<p>{model.enunciado}</p>
+										<p>{@html renderLatex(model.enunciado)}</p>
 									</article>
 								{:else if beat.widget.type === 'variables'}
 									<div class="vars-grid">
@@ -344,7 +364,7 @@
 											<span class="num">i.</span>
 											<p>
 												Para cada restricción, hacemos
-												<code>x_1=0</code> y luego <code>x_2=0</code> para encontrar
+												<Latex expr="x_1 = 0" /> y luego <Latex expr="x_2 = 0" /> para encontrar
 												los puntos donde corta a los ejes.
 											</p>
 										</div>
@@ -376,10 +396,10 @@
 											</li>
 											<li>
 												Las otras slacks se obtienen reemplazando
-												<code>(x_1, x_2)</code> en cada restricción.
+												<Latex expr="(x_1,\, x_2)" /> en cada restricción.
 											</li>
 											<li>
-												Evaluamos <code>Z = 2x_1 + 4x_2</code> en cada fila y
+												Evaluamos <Latex expr="Z = 2x_1 + 4x_2" /> en cada fila y
 												nos quedamos con el valor más alto.
 											</li>
 										</ul>

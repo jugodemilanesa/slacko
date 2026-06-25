@@ -1,7 +1,27 @@
 <script lang="ts">
 	import { tipsHistory, STEP_LABELS, type TipEntry } from '$lib/stores/chat';
+	import katex from 'katex';
+	import 'katex/dist/katex.min.css';
 
 	let { open = true }: { open?: boolean } = $props();
+
+		function renderLatex(text: string): string {
+			return text
+				.replace(/\$\$(.*?)\$\$/g, (_, math) => {
+					try {
+						return katex.renderToString(math, { displayMode: true, throwOnError: false });
+					} catch {
+						return `$$${math}$$`;
+					}
+				})
+				.replace(/\$(?=[^$\d])([^\$\n]+?)\$/g, (_, math) => {
+					try {
+						return katex.renderToString(math, { displayMode: false, throwOnError: false });
+					} catch {
+						return `$${math}$`;
+					}
+				});
+		}
 
 	const kindColors: Record<string, { bg: string; border: string; text: string }> = {
 		tip: { bg: 'rgba(212,168,83,0.06)', border: '#d4a853', text: '#d4a853' },
@@ -63,7 +83,7 @@
 									{/if}
 								</div>
 								<div class="tip-body">
-									{tip.content}
+									{@html renderLatex(tip.content)}
 								</div>
 							</button>
 						{/each}
@@ -87,7 +107,7 @@
 
 	<div class="modal-container" role="dialog" aria-modal="true" aria-label="Consejo completo">
 		<div class="modal-card" style="border-top: 4px solid {activeColors.border};">
-			<button class="modal-close" onclick={() => activeTip = null} aria-label="Cerrar">&times;</button>
+			<button class="modal-close" onclick={() => activeTip = null} aria-label="Cerrar"></button>
 
 			<div class="modal-header">
 				<span class="modal-kind-tag" style="color: {activeColors.text}; background: {activeColors.bg}; border: 1px solid {activeColors.border}30;">
@@ -100,7 +120,7 @@
 			</div>
 
 			<div class="modal-body">
-				{activeTip.content}
+				{@html renderLatex(activeTip.content)}
 			</div>
 
 			<div class="modal-footer">
@@ -283,8 +303,6 @@
 		background: transparent;
 		border: none;
 		color: var(--color-ink-muted, #8888a4);
-		font-size: 1.6rem;
-		line-height: 1;
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
@@ -296,10 +314,16 @@
 		transition: all 0.15s ease;
 	}
 
+	.modal-close::after {
+		content: '✕';
+		font-size: 1.1rem;
+		line-height: 1;
+	}
+
 	.modal-close:hover {
 		color: var(--color-error, #d44848);
 		background: rgba(212, 72, 72, 0.08);
-		transform: rotate(90deg);
+		transform: scale(1.15);
 	}
 
 	.modal-header {
