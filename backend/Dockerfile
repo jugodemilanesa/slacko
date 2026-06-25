@@ -15,9 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8080
 
-# Railway asigna PORT dinámico; por defecto 8000
-ENV PORT=8000
+ENV PORT=8080
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
+CMD daphne -b 0.0.0.0 -p $PORT config.asgi:application
