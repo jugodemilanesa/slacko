@@ -25,4 +25,4 @@ EXPOSE 8080
 
 ENV PORT=8080
 
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8080", "config.asgi:application"]
+CMD ["./docker-entrypoint.sh"]
