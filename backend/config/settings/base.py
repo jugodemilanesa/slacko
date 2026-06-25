@@ -129,7 +129,10 @@ REST_FRAMEWORK = {
     # browser maneja la cookie httpOnly. Sin tokens en el front. CSRF se exige
     # en métodos no seguros para requests ya autenticados (ver SessionAuthentication).
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
+        # Sin enforcement de CSRF: en el deploy split (frontend y backend en
+        # dominios distintos) el front no puede leer la cookie csrftoken. Ver
+        # apps/accounts/authentication.py.
+        "apps.accounts.authentication.CsrfExemptSessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -222,6 +225,11 @@ CORS_ALLOWED_ORIGINS = env.list(
 # Necesario para que el browser mande/acepte la cookie de sesión en requests
 # cross-origin (si el front no estuviera detrás del mismo origin vía proxy).
 CORS_ALLOW_CREDENTIALS = True
+
+# Orígenes permitidos para el handshake del WebSocket (OriginValidator de
+# Channels, ver config/asgi.py). Por default reusa la lista de CORS; en dev se
+# abre a "*" desde local.py.
+WS_ALLOWED_ORIGINS = env.list("WS_ALLOWED_ORIGINS", default=CORS_ALLOWED_ORIGINS)
 
 # --- Channels ---
 

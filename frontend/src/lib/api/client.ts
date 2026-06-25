@@ -1,4 +1,9 @@
-const API_BASE = '/api';
+import { env } from '$env/dynamic/public';
+
+// En dev, PUBLIC_API_BASE queda vacío y se usa el path relativo '/api' (Vite lo
+// proxea al backend). En prod (frontend en Vercel, backend en Railway) se setea
+// PUBLIC_API_BASE=https://<backend> y las requests van directo al backend.
+const API_BASE = `${env.PUBLIC_API_BASE || ''}/api`;
 
 interface RequestOptions {
 	method?: string;

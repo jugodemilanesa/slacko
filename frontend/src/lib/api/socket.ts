@@ -14,6 +14,8 @@
  *   - parsing robusto del JSON entrante
  */
 
+import { env } from '$env/dynamic/public';
+
 import type { ChatToolCall } from './chat';
 
 export interface InboundMessage {
@@ -51,9 +53,12 @@ const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000];
 
 function wsUrlFor(sessionId: string): string {
-	// Vite proxies /ws/ to the backend in dev; in prod the same origin serves
-	// both. Build the URL from the current page origin to inherit ws/wss. La
-	// cookie de sesión autentica el handshake (mismo origin → el browser la manda).
+	// En prod (frontend en Vercel, backend en Railway) se setea
+	// PUBLIC_WS_BASE=wss://<backend> y el WS va directo al backend. La cookie de
+	// sesión (SameSite=None) autentica el handshake cross-origin.
+	const base = env.PUBLIC_WS_BASE;
+	if (base) return `${base}/ws/chat/${sessionId}/`;
+	// En dev: Vite proxea /ws/ al backend; armamos la URL desde el origin actual.
 	const proto = location.protocol === 'https:' ? 'wss' : 'ws';
 	return `${proto}://${location.host}/ws/chat/${sessionId}/`;
 }
